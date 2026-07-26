@@ -39,7 +39,7 @@ deterministic simulated data.
 | Phase | Scope | Status |
 |---|---|---|
 | 1 | Institutional Midnight UI, deterministic mock data | **Done** |
-| 2 | FastAPI backend, schemas, validation, demo-data generator | Not started |
+| 2 | FastAPI backend, schemas, validation, demo-data generator | **Done** |
 | 3 | Core risk analysis: VaR, ES, correlation, concentration, risk contribution | Not started |
 | 4 | Walk-forward backtesting and the Kupiec test | Not started |
 | 5 | Stress testing, including historical scenarios | Not started |
@@ -74,7 +74,9 @@ Two deliberate choices worth flagging:
 
 ## Running it
 
-Requires Node.js 20.9+ and npm.
+Requires Node.js 20.9+ and Python 3.11+.
+
+### Frontend
 
 ```bash
 cd frontend
@@ -90,6 +92,36 @@ npm run dev          # http://localhost:3000
 | `npm run lint` | ESLint (Next.js 16 removed `next lint`; `next build` no longer lints) |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run verify` | All four, in order |
+
+### Backend
+
+Dependencies are managed with [uv](https://docs.astral.sh/uv/), which writes a
+lockfile so a clean clone resolves to the same versions.
+
+```bash
+uv sync --directory backend --all-groups
+uv run --directory backend uvicorn app.main:app --reload --port 8000
+```
+
+| Command | Purpose |
+|---|---|
+| `uv run --directory backend pytest` | Test suite |
+| `uv run --directory backend ruff check .` | Lint |
+| `uv run --directory backend ruff format .` | Format |
+
+Without uv, `python -m venv .venv` followed by `pip install -e "backend[dev]"`
+works too; uv is a convenience, not a requirement.
+
+### Regenerating the demonstration dataset
+
+```bash
+uv run --directory backend python scripts/generate_demo_data.py
+```
+
+Writes `market_data.csv`, `portfolio.csv` and `manifest.json` into
+`frontend/public/demo/`. The manifest records the seed and a SHA-256 of each
+file, so regeneration can be *verified* identical rather than assumed:
+re-running the command must leave the checksums unchanged.
 
 ## Conventions
 

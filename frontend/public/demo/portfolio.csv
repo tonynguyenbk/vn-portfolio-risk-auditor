@@ -1,0 +1,6 @@
+ticker,weight,sector
+ASSET_A,0.25,Technology
+ASSET_B,0.25,Banking
+ASSET_C,0.2,Consumer
+ASSET_D,0.15,Materials
+ASSET_E,0.15,Retail

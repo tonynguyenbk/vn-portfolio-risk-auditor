@@ -1,0 +1,21 @@
+{
+  "generator": "backend/scripts/generate_demo_data.py",
+  "seed": 42,
+  "isSimulated": true,
+  "description": "Deterministic synthetic price series. Fictional tickers. Not observed Vietnamese market data.",
+  "startDate": "2018-01-01",
+  "endDate": "2025-12-31",
+  "tradingDays": 2088,
+  "tickers": [
+    "ASSET_A",
+    "ASSET_B",
+    "ASSET_C",
+    "ASSET_D",
+    "ASSET_E",
+    "VNINDEX"
+  ],
+  "files": {
+    "market_data.csv": "7d2372940c641ffeba868b2fa42a43f1cc43b36ed41fa489681be7bc1865f8af",
+    "portfolio.csv": "62dc19f51e45de6c4292a6c5809c59bdc025b51d8a108a106b074d0f2396267f"
+  }
+}

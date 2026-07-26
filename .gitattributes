@@ -1,0 +1,25 @@
+# Normalise every text file to LF in the working tree.
+#
+# This is not cosmetic. `backend/scripts/generate_demo_data.py` writes the demo
+# CSVs with explicit LF endings and records their SHA-256 in manifest.json. If
+# Git checked those files out with CRLF on Windows, regenerating the dataset
+# would produce a different digest and the reproducibility check documented in
+# the README would fail for a reason that has nothing to do with the data.
+* text=auto eol=lf
+
+# Binary files Git must not touch.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+
+# Generated lockfiles: keep them out of diffs and language statistics.
+package-lock.json linguist-generated=true -diff
+uv.lock linguist-generated=true -diff
+
+# The frozen demonstration dataset is data, not source.
+frontend/public/demo/*.csv linguist-generated=true -diff
