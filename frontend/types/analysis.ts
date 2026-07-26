@@ -42,9 +42,15 @@ export interface AnalysisMetadata {
   assets: number;
 }
 
+export interface DataQualityIssue {
+  code: string;
+  message: string;
+  severity: "warning" | "breach";
+}
+
 export interface DataQuality {
   status: DataStatus;
-  warnings: string[];
+  warnings: DataQualityIssue[];
   rowsRemoved: number;
   duplicateRecords: number;
   alignedObservations: number;
@@ -154,9 +160,10 @@ export interface AnalysisResult {
   dataQuality: DataQuality;
   portfolio: PortfolioBlock;
   metrics: Metrics;
-  concentration: Concentration;
+  /** Null when the analysis could not derive it (PRD 16.4). */
+  concentration: Concentration | null;
   riskContribution: RiskContribution[];
-  correlation: CorrelationMatrix;
+  correlation: CorrelationMatrix | null;
   limits: LimitsBlock;
   assumptions: Assumptions;
 }
@@ -185,8 +192,10 @@ export interface BacktestSummaryRow {
 }
 
 export interface BacktestResult {
+  /** Series for the primary model/confidence pair, used by the exception chart. */
   series: BacktestPoint[];
   summary: BacktestSummaryRow[];
+  assumptions: Assumptions;
 }
 
 /** User-controlled analysis parameters (PRD 10.1). */

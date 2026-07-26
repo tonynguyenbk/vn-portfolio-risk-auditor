@@ -7,11 +7,11 @@ import { CorrelationHeatmap } from "@/components/panels/correlation-heatmap";
 import { DataQualityStrip } from "@/components/panels/data-quality-strip";
 import { RiskContributionPanel } from "@/components/panels/risk-contribution-panel";
 import { RiskStatusPanel } from "@/components/panels/risk-status-panel";
-import { DEFAULT_LIMITS, getDemoBundle } from "@/lib/mock/demo-analysis";
+import { DEFAULT_LIMITS, demoAnalysis, demoBacktest } from "@/lib/demo-data";
 import { formatDate, formatPercent } from "@/lib/format";
 
 export default function OverviewPage() {
-  const { analysis, backtestSeries } = getDemoBundle();
+  const analysis = demoAnalysis;
   const { metrics, portfolio, concentration, correlation, limits, metadata } = analysis;
 
   const var95 =
@@ -72,7 +72,7 @@ export default function OverviewPage() {
           <RiskProfileChart
             wealthCurve={portfolio.wealthCurve}
             benchmarkCurve={portfolio.benchmarkCurve}
-            backtestSeries={backtestSeries}
+            backtestSeries={demoBacktest.series}
             confidenceLabel="95%"
             modelLabel="Historical Simulation"
           />
@@ -87,15 +87,19 @@ export default function OverviewPage() {
         </div>
       </div>
 
+      {/* Both blocks are null when the engine could not derive them, which the
+          API signals with null rather than a zero (PRD 16.4). */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <AllocationPanel
-          weights={portfolio.weights}
-          sectorWeights={portfolio.sectorWeights}
-          concentration={concentration}
-        />
+        {concentration && (
+          <AllocationPanel
+            weights={portfolio.weights}
+            sectorWeights={portfolio.sectorWeights}
+            concentration={concentration}
+          />
+        )}
         <div className="flex flex-col gap-4">
           <RiskContributionPanel rows={analysis.riskContribution} />
-          <CorrelationHeatmap correlation={correlation} />
+          {correlation && <CorrelationHeatmap correlation={correlation} />}
         </div>
       </div>
 

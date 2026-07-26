@@ -3,7 +3,7 @@ import { AssumptionsFooter } from "@/components/panels/assumptions-footer";
 import { ModelAuditTable } from "@/components/panels/model-audit-table";
 import { PrintButton } from "@/components/report/print-button";
 import { Panel, PanelBody, PanelHeader, PanelTitle } from "@/components/ui/panel";
-import { DEFAULT_LIMITS, getDemoBundle } from "@/lib/mock/demo-analysis";
+import { DEFAULT_LIMITS, demoAnalysis, demoBacktest } from "@/lib/demo-data";
 import { formatDateRange, formatPercent } from "@/lib/format";
 import { MODEL_LABELS, type BacktestSummaryRow } from "@/types/analysis";
 
@@ -36,7 +36,8 @@ function bestCalibratedModel(rows: BacktestSummaryRow[]): string {
 }
 
 export default function ReportPage() {
-  const { analysis, backtestSummary } = getDemoBundle();
+  const analysis = demoAnalysis;
+  const backtestSummary = demoBacktest.summary;
   const { metrics, metadata, concentration, limits } = analysis;
 
   const var95 = metrics.var.find((v) => v.model === "historical" && v.confidence === 0.95);
@@ -61,7 +62,9 @@ export default function ReportPage() {
     { label: "Risk-limit warnings", value: String(limits.warnings.length) },
     {
       label: "Largest concentration",
-      value: `${formatPercent(concentration.largestWeight, 1)} in ${concentration.largestWeightTicker}`,
+      value: concentration
+        ? `${formatPercent(concentration.largestWeight, 1)} in ${concentration.largestWeightTicker}`
+        : "—",
     },
   ];
 

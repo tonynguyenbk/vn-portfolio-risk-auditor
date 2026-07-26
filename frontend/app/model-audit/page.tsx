@@ -3,7 +3,7 @@ import { SimulatedDataNotice } from "@/components/feedback/simulated-data-notice
 import { AssumptionsFooter } from "@/components/panels/assumptions-footer";
 import { ModelAuditTable } from "@/components/panels/model-audit-table";
 import { Panel, PanelBody, PanelHeader, PanelTitle } from "@/components/ui/panel";
-import { DEFAULT_LIMITS, getDemoBundle } from "@/lib/mock/demo-analysis";
+import { DEFAULT_LIMITS, demoAnalysis, demoBacktest } from "@/lib/demo-data";
 
 const DEFINITIONS = [
   {
@@ -25,7 +25,7 @@ const DEFINITIONS = [
 ];
 
 export default function ModelAuditPage() {
-  const { analysis, backtestSeries, backtestSummary } = getDemoBundle();
+  const analysis = demoAnalysis;
 
   return (
     <div className="mx-auto flex max-w-[1400px] flex-col gap-4">
@@ -41,14 +41,14 @@ export default function ModelAuditPage() {
       </div>
 
       <ModelAuditTable
-        rows={backtestSummary}
+        rows={demoBacktest.summary}
         significance={DEFAULT_LIMITS.testSignificance}
       />
 
       <RiskProfileChart
         wealthCurve={analysis.portfolio.wealthCurve}
         benchmarkCurve={analysis.portfolio.benchmarkCurve}
-        backtestSeries={backtestSeries}
+        backtestSeries={demoBacktest.series}
         confidenceLabel="95%"
         modelLabel="Historical Simulation"
       />

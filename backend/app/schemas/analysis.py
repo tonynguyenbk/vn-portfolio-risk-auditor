@@ -216,6 +216,37 @@ class AnalysisResult(CamelModel):
     assumptions: Assumptions
 
 
+class BacktestPoint(CamelModel):
+    date: date
+    #: Realised loss, positive magnitude.
+    loss: float
+    var_threshold: float
+    is_exception: bool
+
+
+class BacktestSummaryRow(CamelModel):
+    model: VarModel
+    confidence: float
+    observations: int
+    expected_exceptions: float
+    actual_exceptions: int
+    exception_rate: float
+    average_var: float
+    mean_exception_severity: float
+    kupiec_lr: float
+    kupiec_p_value: float
+    #: "pass" means the exception count is not statistically inconsistent with
+    #: the target rate. It is not proof the model is correct (PRD 9.12).
+    result: str
+
+
+class BacktestResponse(CamelModel):
+    #: Series for the primary model/confidence pair, used by the exception chart.
+    series: list[BacktestPoint] = Field(default_factory=list)
+    summary: list[BacktestSummaryRow] = Field(default_factory=list)
+    assumptions: Assumptions
+
+
 class HealthResponse(CamelModel):
     status: str
     version: str

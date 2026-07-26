@@ -52,6 +52,16 @@ select = [
     "NPY",  # numpy-specific rules
 ]
 
+[tool.ruff.lint.flake8-bugbear]
+# `File(...)`, `Form(...)` and `Depends(...)` in argument defaults is the
+# documented FastAPI idiom, not the mutable-default bug B008 exists to catch.
+extend-immutable-calls = [
+    "fastapi.Depends",
+    "fastapi.File",
+    "fastapi.Form",
+    "fastapi.Query",
+]
+
 [tool.ruff.lint.per-file-ignores]
 # Assertions are the point of a test file.
 "tests/*" = ["S101"]

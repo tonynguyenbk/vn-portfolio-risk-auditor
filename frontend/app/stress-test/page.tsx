@@ -1,10 +1,10 @@
 import { SimulatedDataNotice } from "@/components/feedback/simulated-data-notice";
 import { StressTestPanel } from "@/components/stress/stress-test-panel";
 import { Panel, PanelBody, PanelHeader, PanelTitle } from "@/components/ui/panel";
-import { DEFAULT_LIMITS, getDemoBundle } from "@/lib/mock/demo-analysis";
+import { DEFAULT_LIMITS, demoAnalysis } from "@/lib/demo-data";
 
 export default function StressTestPage() {
-  const { analysis } = getDemoBundle();
+  const analysis = demoAnalysis;
 
   return (
     <div className="mx-auto flex max-w-[1400px] flex-col gap-4">

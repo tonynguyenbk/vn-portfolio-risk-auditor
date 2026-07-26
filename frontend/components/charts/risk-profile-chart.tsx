@@ -16,7 +16,7 @@ import { Panel, PanelBody, PanelHeader, PanelTitle } from "@/components/ui/panel
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { InfoTooltip } from "@/components/ui/info-tooltip";
 import { Button } from "@/components/ui/button";
-import { downsample } from "@/lib/mock/demo-analysis";
+import { downsample } from "@/lib/chart-utils";
 import { formatDate, formatNumber, formatPercent } from "@/lib/format";
 import type { BacktestPoint, CurvePoint } from "@/types/analysis";
 
