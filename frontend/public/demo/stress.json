@@ -1,0 +1,174 @@
+{
+  "isSimulated": true,
+  "note": "Historical scenarios are replays of intervals located in the generated dataset. They describe what happened, not what will.",
+  "weights": [
+    {
+      "ticker": "ASSET_A",
+      "weight": 0.25,
+      "sector": "Technology"
+    },
+    {
+      "ticker": "ASSET_B",
+      "weight": 0.25,
+      "sector": "Banking"
+    },
+    {
+      "ticker": "ASSET_C",
+      "weight": 0.2,
+      "sector": "Consumer"
+    },
+    {
+      "ticker": "ASSET_D",
+      "weight": 0.15,
+      "sector": "Materials"
+    },
+    {
+      "ticker": "ASSET_E",
+      "weight": 0.15,
+      "sector": "Retail"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "worst_5d",
+      "label": "Worst trading week",
+      "description": "The five consecutive trading days in which the portfolio fell furthest.",
+      "windowDays": 5,
+      "scenarioName": "Worst trading week",
+      "scenarioType": "historical",
+      "portfolioImpact": -0.22985543,
+      "loss": 0.22985543,
+      "largestContributor": "ASSET_A",
+      "limitStatus": "breach",
+      "stressLimit": 0.08,
+      "periodStart": "2019-10-07",
+      "periodEnd": "2019-10-14",
+      "impacts": [
+        {
+          "ticker": "ASSET_A",
+          "weight": 0.25,
+          "shock": -0.28239901,
+          "contribution": -0.07059975
+        },
+        {
+          "ticker": "ASSET_B",
+          "weight": 0.25,
+          "shock": -0.2526825,
+          "contribution": -0.06317062
+        },
+        {
+          "ticker": "ASSET_C",
+          "weight": 0.2,
+          "shock": -0.14599081,
+          "contribution": -0.02919816
+        },
+        {
+          "ticker": "ASSET_D",
+          "weight": 0.15,
+          "shock": -0.27268293,
+          "contribution": -0.04090244
+        },
+        {
+          "ticker": "ASSET_E",
+          "weight": 0.15,
+          "shock": -0.17322965,
+          "contribution": -0.02598445
+        }
+      ]
+    },
+    {
+      "id": "worst_20d",
+      "label": "Worst month",
+      "description": "The twenty-day stretch with the deepest cumulative decline.",
+      "windowDays": 20,
+      "scenarioName": "Worst month",
+      "scenarioType": "historical",
+      "portfolioImpact": -0.15230146,
+      "loss": 0.15230146,
+      "largestContributor": "ASSET_B",
+      "limitStatus": "breach",
+      "stressLimit": 0.08,
+      "periodStart": "2019-09-17",
+      "periodEnd": "2019-10-15",
+      "impacts": [
+        {
+          "ticker": "ASSET_A",
+          "weight": 0.25,
+          "shock": -0.20202426,
+          "contribution": -0.05050606
+        },
+        {
+          "ticker": "ASSET_B",
+          "weight": 0.25,
+          "shock": -0.21004184,
+          "contribution": -0.05251046
+        },
+        {
+          "ticker": "ASSET_C",
+          "weight": 0.2,
+          "shock": 0.00136682,
+          "contribution": 0.00027336
+        },
+        {
+          "ticker": "ASSET_D",
+          "weight": 0.15,
+          "shock": -0.1230234,
+          "contribution": -0.01845351
+        },
+        {
+          "ticker": "ASSET_E",
+          "weight": 0.15,
+          "shock": -0.20736526,
+          "contribution": -0.03110479
+        }
+      ]
+    },
+    {
+      "id": "worst_60d",
+      "label": "Worst quarter",
+      "description": "The sixty-day stretch with the deepest cumulative decline.",
+      "windowDays": 60,
+      "scenarioName": "Worst quarter",
+      "scenarioType": "historical",
+      "portfolioImpact": -0.24279097,
+      "loss": 0.24279097,
+      "largestContributor": "ASSET_A",
+      "limitStatus": "breach",
+      "stressLimit": 0.08,
+      "periodStart": "2022-11-15",
+      "periodEnd": "2023-02-07",
+      "impacts": [
+        {
+          "ticker": "ASSET_A",
+          "weight": 0.25,
+          "shock": -0.43631195,
+          "contribution": -0.10907799
+        },
+        {
+          "ticker": "ASSET_B",
+          "weight": 0.25,
+          "shock": -0.22568341,
+          "contribution": -0.05642085
+        },
+        {
+          "ticker": "ASSET_C",
+          "weight": 0.2,
+          "shock": 0.00758567,
+          "contribution": 0.00151713
+        },
+        {
+          "ticker": "ASSET_D",
+          "weight": 0.15,
+          "shock": -0.29375407,
+          "contribution": -0.04406311
+        },
+        {
+          "ticker": "ASSET_E",
+          "weight": 0.15,
+          "shock": -0.23164105,
+          "contribution": -0.03474616
+        }
+      ]
+    }
+  ]
+}

@@ -1,9 +1,12 @@
+"use client";
+
+import { useAnalysisData } from "@/components/analysis-data-provider";
 import { SimulatedDataNotice } from "@/components/feedback/simulated-data-notice";
 import { AssumptionsFooter } from "@/components/panels/assumptions-footer";
 import { ModelAuditTable } from "@/components/panels/model-audit-table";
-import { PrintButton } from "@/components/report/print-button";
+import { ExportPanel } from "@/components/report/export-panel";
 import { Panel, PanelBody, PanelHeader, PanelTitle } from "@/components/ui/panel";
-import { DEFAULT_LIMITS, demoAnalysis, demoBacktest } from "@/lib/demo-data";
+import { DEFAULT_LIMITS } from "@/lib/demo-data";
 import { formatDateRange, formatPercent } from "@/lib/format";
 import { MODEL_LABELS, type BacktestSummaryRow } from "@/types/analysis";
 
@@ -52,8 +55,8 @@ function bestCalibratedModel(rows: BacktestSummaryRow[]): string {
 }
 
 export default function ReportPage() {
-  const analysis = demoAnalysis;
-  const backtestSummary = demoBacktest.summary;
+  const { analysis, backtestResult } = useAnalysisData();
+  const backtestSummary = backtestResult.summary;
   const { metrics, metadata, concentration, limits } = analysis;
 
   const var95 = metrics.var.find((v) => v.model === "historical" && v.confidence === 0.95);
@@ -96,7 +99,6 @@ export default function ReportPage() {
               A self-contained summary of the analysis, its assumptions and its limits.
             </p>
           </div>
-          <PrintButton />
         </div>
         <SimulatedDataNotice />
       </div>
@@ -190,6 +192,8 @@ export default function ReportPage() {
 
       {/* Carries the educational-use disclaimer PRD 18 requires as the closing
           item of the report, so it is not repeated as a separate block. */}
+      <ExportPanel />
+
       <AssumptionsFooter assumptions={analysis.assumptions} metadata={metadata} />
     </div>
   );

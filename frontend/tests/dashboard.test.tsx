@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
+import { renderWithProviders as render } from "./test-utils";
 import OverviewPage from "@/app/page";
 import ReportPage from "@/app/report/page";
 

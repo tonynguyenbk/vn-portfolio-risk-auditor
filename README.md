@@ -33,8 +33,9 @@ scenario would do to the portfolio.
 
 ## Current status
 
-Phases 1 to 4 of 7 are complete: the dashboard, the Python risk engine, and
-walk-forward model validation with the Kupiec test.
+Phases 1 to 6 of 7 are complete: the dashboard, the Python risk engine,
+walk-forward model validation, stress testing, CSV upload against the live API,
+and report export.
 
 | Phase | Scope | Status |
 |---|---|---|
@@ -42,9 +43,13 @@ walk-forward model validation with the Kupiec test.
 | 2 | FastAPI backend, schemas, validation, demo-data generator | **Done** |
 | 3 | Core risk analysis: VaR, ES, correlation, concentration, risk contribution | **Done** |
 | 4 | Walk-forward backtesting and the Kupiec test | **Done** |
-| 5 | Stress testing, including historical scenarios | Not started |
-| 6 | Reporting and CSV export | Not started |
+| 5 | Stress testing, including historical scenarios | **Done** |
+| 6 | Reporting and CSV export | **Done** |
 | 7 | Research report, documentation, deployment | Not started |
+
+The remaining phase is written and deployed material rather than code: the
+research paper, the architecture diagram, screenshots, the demo script and the
+deployment itself. Nothing is deployed yet, and the repository is local only.
 
 Every figure on screen is now produced by the Python engine; the throwaway
 TypeScript mock that carried Phase 1 has been deleted.
@@ -78,9 +83,51 @@ Two deliberate choices worth flagging:
   verify those implementations, which is stronger evidence of correctness than calling
   SciPy directly would be — and keeps the deployed bundle small enough for a free
   serverless tier.
-- **Field names are camelCase**, not the snake_case shown in PRD 16.3. The backend will
-  emit camelCase through a Pydantic alias generator so one convention holds end to end
-  and no mapping layer is needed.
+- **Field names are camelCase**, not the snake_case shown in PRD 16.3. The backend emits
+  camelCase through a Pydantic alias generator so one convention holds end to end and no
+  mapping layer is needed.
+
+## API
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /api/v1/health` | Liveness probe |
+| `POST /api/v1/analyse` | Full analysis from uploaded market and portfolio CSVs |
+| `POST /api/v1/backtest` | Walk-forward backtest of every selected model, with Kupiec |
+| `POST /api/v1/stress-test` | Custom shock vector applied to supplied weights (JSON) |
+| `POST /api/v1/stress-test/historical` | Replay a date range against the weights |
+
+Uploads are parsed in memory and discarded; nothing is written to disk and
+nothing is retained after the response is built (PRD 17). Errors carry a
+structured `code` so the interface can react to *what* failed rather than
+pattern-matching a message.
+
+The frontend calls these only for uploaded portfolios. Set `NEXT_PUBLIC_API_URL`
+to point at a backend on another origin; empty means same-origin.
+
+## Stress testing
+
+Two kinds of scenario, deliberately different:
+
+**Historical** episodes are intervals the engine located in the dataset and
+replayed against the current weights. Because they are real stretches, they
+carry whatever co-movement the assets actually had, rather than whatever the
+author of a shock vector assumed. The bundled demo ships three, precomputed:
+
+| Scenario | Period | Portfolio impact |
+|---|---|---:|
+| Worst trading week | 2019-10-07 → 2019-10-14 | −22.99% |
+| Worst month | 2019-09-17 → 2019-10-15 | −15.23% |
+| Worst quarter | 2022-11-15 → 2023-02-07 | −24.28% |
+
+**Custom** shocks are set by hand on sliders. The impact is the dot product
+`w' s`, computed in the browser so the sliders respond instantly; the same
+arithmetic in `backend/app/services/stress_testing.py` is authoritative, carries
+the PRD 20.1 tests, and serves uploaded portfolios.
+
+Neither is a forecast. A stress test answers "if this happened, what then" and
+attaches no probability to the scenario. Being the worst stretch in the sample
+says nothing about the next one.
 
 ## Running it
 

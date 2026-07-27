@@ -1,3 +1,6 @@
+"use client";
+
+import { useAnalysisData } from "@/components/analysis-data-provider";
 import { RiskProfileChart } from "@/components/charts/risk-profile-chart";
 import { SimulatedDataNotice } from "@/components/feedback/simulated-data-notice";
 import { MetricCard } from "@/components/metrics/metric-card";
@@ -7,11 +10,11 @@ import { CorrelationHeatmap } from "@/components/panels/correlation-heatmap";
 import { DataQualityStrip } from "@/components/panels/data-quality-strip";
 import { RiskContributionPanel } from "@/components/panels/risk-contribution-panel";
 import { RiskStatusPanel } from "@/components/panels/risk-status-panel";
-import { DEFAULT_LIMITS, demoAnalysis, demoBacktest } from "@/lib/demo-data";
+import { DEFAULT_LIMITS } from "@/lib/demo-data";
 import { formatDate, formatPercent } from "@/lib/format";
 
 export default function OverviewPage() {
-  const analysis = demoAnalysis;
+  const { analysis, backtestResult } = useAnalysisData();
   const { metrics, portfolio, concentration, correlation, limits, metadata } = analysis;
 
   const var95 =
@@ -72,7 +75,7 @@ export default function OverviewPage() {
           <RiskProfileChart
             wealthCurve={portfolio.wealthCurve}
             benchmarkCurve={portfolio.benchmarkCurve}
-            backtestSeries={demoBacktest.series}
+            backtestSeries={backtestResult.series}
             confidenceLabel="95%"
             modelLabel="Historical Simulation"
           />

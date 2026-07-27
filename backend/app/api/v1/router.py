@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import io
 import json
+from datetime import date
 
 import pandas as pd
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
@@ -18,17 +19,24 @@ from app.core.config import MAX_UPLOAD_BYTES
 from app.schemas.analysis import (
     AnalysisConfig,
     AnalysisResult,
+    AssetImpact,
     Assumptions,
     BacktestPoint,
     BacktestResponse,
     BacktestSummaryRow,
     HealthResponse,
+    LimitStatus,
     RiskLimits,
+    ScenarioType,
+    StressTestRequest,
+    StressTestResponse,
 )
 from app.services.analysis import AnalysisBlockedError, run_analysis
 from app.services.backtesting import BacktestResult, compare_models, walk_forward_backtest
-from app.services.data_validation import DataValidationError
+from app.services.data_validation import DataValidationError, clean_market_frame
 from app.services.portfolio_metrics import TRADING_DAYS_PER_YEAR
+from app.services.returns import pivot_long_prices
+from app.services.stress_testing import StressResult, apply_shocks, historical_scenario
 from app.services.var_models import QUANTILE_METHOD_DESCRIPTION
 
 router = APIRouter(prefix="/api/v1")
@@ -144,9 +152,121 @@ async def backtest(
     )
 
 
+@router.post("/stress-test", response_model=StressTestResponse, tags=["analysis"])
+async def stress_test(request: StressTestRequest) -> StressTestResponse:
+    """Apply a custom shock vector to the supplied weights (PRD 16.3).
+
+    JSON rather than multipart, because a custom scenario is pure arithmetic on
+    the weights and needs no price history. Replaying a historical interval
+    does need prices, and lives at ``/stress-test/historical``.
+    """
+    weights = {w.ticker: w.weight for w in request.weights}
+
+    if request.scenario.type is ScenarioType.HISTORICAL:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "WRONG_ENDPOINT",
+                "message": (
+                    "Historical scenarios need price history. Use "
+                    "/api/v1/stress-test/historical with the market data attached."
+                ),
+            },
+        )
+
+    try:
+        result = apply_shocks(
+            weights=weights,
+            shocks=request.scenario.shocks,
+            scenario_name=request.scenario.name,
+            stress_limit=request.stress_limit,
+            notional_value=request.notional_value,
+        )
+    except (ValueError, KeyError) as exc:
+        raise HTTPException(
+            status_code=422,
+            detail={"code": "INVALID_SCENARIO", "message": str(exc)},
+        ) from exc
+
+    return _to_stress_response(result, ScenarioType.CUSTOM, request.stress_limit)
+
+
+@router.post(
+    "/stress-test/historical", response_model=StressTestResponse, tags=["analysis"]
+)
+async def stress_test_historical(
+    market_file: UploadFile = File(...),
+    portfolio_file: UploadFile = File(...),
+    start_date: date = Form(...),
+    end_date: date = Form(...),
+    scenario_name: str | None = Form(default=None),
+    stress_limit: float = Form(default=0.08),
+    notional_value: float | None = Form(default=None),
+) -> StressTestResponse:
+    """Replay a historical interval against the supplied weights (PRD 9.14)."""
+    market = await _read_csv(market_file, "market_file")
+    portfolio = await _read_csv(portfolio_file, "portfolio_file")
+
+    try:
+        cleaned, _, _ = clean_market_frame(market)
+        prices = pivot_long_prices(cleaned)
+        weights = {
+            str(row.ticker).strip().upper(): float(row.weight)
+            for row in portfolio.itertuples()
+        }
+        result = historical_scenario(
+            prices=prices,
+            weights=weights,
+            start=start_date,
+            end=end_date,
+            scenario_name=scenario_name,
+            stress_limit=stress_limit,
+            notional_value=notional_value,
+        )
+    except DataValidationError as exc:
+        raise HTTPException(
+            status_code=400, detail={"code": "INVALID_INPUT", "message": str(exc)}
+        ) from exc
+    except (ValueError, KeyError, AttributeError) as exc:
+        raise HTTPException(
+            status_code=422,
+            detail={"code": "INVALID_SCENARIO", "message": str(exc)},
+        ) from exc
+
+    return _to_stress_response(result, ScenarioType.HISTORICAL, stress_limit)
+
+
 # --------------------------------------------------------------------------- #
 # Helpers
 # --------------------------------------------------------------------------- #
+
+
+def _to_stress_response(
+    result: StressResult,
+    scenario_type: ScenarioType,
+    stress_limit: float,
+) -> StressTestResponse:
+    return StressTestResponse(
+        scenario_name=result.scenario_name,
+        scenario_type=scenario_type,
+        portfolio_impact=result.portfolio_impact,
+        loss=result.loss,
+        impacts=[
+            AssetImpact(
+                ticker=impact.ticker,
+                weight=impact.weight,
+                shock=impact.shock,
+                contribution=impact.contribution,
+            )
+            for impact in result.impacts
+        ],
+        largest_contributor=result.largest_contributor,
+        notional_impact=result.notional_impact,
+        stress_limit=stress_limit,
+        limit_status=LimitStatus(result.limit_status),
+        period_start=result.period_start,
+        period_end=result.period_end,
+    )
 
 
 def _to_summary_row(result: BacktestResult) -> BacktestSummaryRow:

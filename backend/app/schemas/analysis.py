@@ -249,6 +249,58 @@ class BacktestResponse(CamelModel):
     assumptions: Assumptions
 
 
+# --------------------------------------------------------------------------- #
+# Stress testing (PRD 9.14, 11.7, 16.3)
+# --------------------------------------------------------------------------- #
+
+
+class ScenarioType(StrEnum):
+    CUSTOM = "custom"
+    HISTORICAL = "historical"
+
+
+class StressScenario(CamelModel):
+    type: ScenarioType = ScenarioType.CUSTOM
+    name: str = "Custom adverse scenario"
+    #: Return shock per ticker, e.g. {"ASSET_A": -0.05}. Custom scenarios only.
+    shocks: dict[str, float] = Field(default_factory=dict)
+    #: Interval to replay. Historical scenarios only.
+    start_date: date | None = None
+    end_date: date | None = None
+
+
+class StressTestRequest(CamelModel):
+    weights: list[AssetWeight]
+    scenario: StressScenario
+    notional_value: float | None = Field(default=None, gt=0)
+    stress_limit: float = Field(default=0.08, gt=0)
+
+
+class AssetImpact(CamelModel):
+    ticker: str
+    weight: float
+    shock: float
+    contribution: float
+
+
+class StressTestResponse(CamelModel):
+    scenario_name: str
+    scenario_type: ScenarioType
+    #: Total portfolio return under the scenario. Negative for a loss.
+    portfolio_impact: float
+    #: Positive loss magnitude; 0.0 when the scenario is not a loss.
+    loss: float
+    impacts: list[AssetImpact] = Field(default_factory=list)
+    #: None when no asset contributed negatively.
+    largest_contributor: str | None = None
+    #: Labelled a *simulated* notional amount in the UI, never real capital.
+    notional_impact: float | None = None
+    stress_limit: float
+    limit_status: LimitStatus
+    period_start: date | None = None
+    period_end: date | None = None
+
+
 class HealthResponse(CamelModel):
     status: str
     version: str

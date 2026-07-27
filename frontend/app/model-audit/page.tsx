@@ -1,9 +1,12 @@
+"use client";
+
+import { useAnalysisData } from "@/components/analysis-data-provider";
 import { RiskProfileChart } from "@/components/charts/risk-profile-chart";
 import { SimulatedDataNotice } from "@/components/feedback/simulated-data-notice";
 import { AssumptionsFooter } from "@/components/panels/assumptions-footer";
 import { FilteredModelAudit } from "@/components/panels/filtered-model-audit";
 import { Panel, PanelBody, PanelHeader, PanelTitle } from "@/components/ui/panel";
-import { DEFAULT_LIMITS, demoAnalysis, demoBacktest } from "@/lib/demo-data";
+import { DEFAULT_LIMITS } from "@/lib/demo-data";
 
 const DEFINITIONS = [
   {
@@ -25,7 +28,7 @@ const DEFINITIONS = [
 ];
 
 export default function ModelAuditPage() {
-  const analysis = demoAnalysis;
+  const { analysis, backtestResult } = useAnalysisData();
 
   return (
     <div className="mx-auto flex max-w-[1400px] flex-col gap-4">
@@ -41,14 +44,14 @@ export default function ModelAuditPage() {
       </div>
 
       <FilteredModelAudit
-        rows={demoBacktest.summary}
+        rows={backtestResult.summary}
         significance={DEFAULT_LIMITS.testSignificance}
       />
 
       <RiskProfileChart
         wealthCurve={analysis.portfolio.wealthCurve}
         benchmarkCurve={analysis.portfolio.benchmarkCurve}
-        backtestSeries={demoBacktest.series}
+        backtestSeries={backtestResult.series}
         confidenceLabel="95%"
         modelLabel="Historical Simulation"
       />

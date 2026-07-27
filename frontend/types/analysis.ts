@@ -210,6 +210,54 @@ export interface BacktestResult {
   assumptions: Assumptions;
 }
 
+// --------------------------------------------------------------------------- //
+// Stress testing (PRD 9.14, 11.7)
+// --------------------------------------------------------------------------- //
+
+export type ScenarioType = "custom" | "historical";
+
+export interface AssetImpact {
+  ticker: string;
+  weight: number;
+  /** Return shock applied to this asset, e.g. -0.09 for a 9% fall. */
+  shock: number;
+  /** `weight * shock` — this asset's share of the portfolio impact. */
+  contribution: number;
+}
+
+export interface StressResult {
+  scenarioName: string;
+  scenarioType: ScenarioType;
+  /** Total portfolio return under the scenario. Negative for a loss. */
+  portfolioImpact: number;
+  /** Positive loss magnitude; 0 when the scenario is not a loss. */
+  loss: number;
+  impacts: AssetImpact[];
+  /** Null when no asset contributed negatively. */
+  largestContributor: string | null;
+  /** Always presented as a *simulated* notional amount, never real capital. */
+  notionalImpact?: number | null;
+  stressLimit: number;
+  limitStatus: LimitStatus;
+  periodStart?: string | null;
+  periodEnd?: string | null;
+}
+
+/** A precomputed historical scenario, located in the dataset by the engine. */
+export interface HistoricalScenario extends StressResult {
+  id: string;
+  label: string;
+  description: string;
+  windowDays: number;
+}
+
+export interface StressBundle {
+  isSimulated: boolean;
+  note: string;
+  weights: AssetWeight[];
+  scenarios: HistoricalScenario[];
+}
+
 /** User-controlled analysis parameters (PRD 10.1). */
 export interface AnalysisParams {
   dataset: "demo" | "upload";

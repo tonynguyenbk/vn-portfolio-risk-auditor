@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import { AnalysisDataProvider } from "@/components/analysis-data-provider";
 import { AnalysisParamsProvider } from "@/components/analysis-params-provider";
 import { AppShell } from "@/components/layout/app-shell";
 import "./globals.css";
@@ -38,7 +39,9 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable} h-full`}>
       <body className="min-h-full font-sans antialiased">
         <AnalysisParamsProvider>
-          <AppShell>{children}</AppShell>
+          <AnalysisDataProvider>
+            <AppShell>{children}</AppShell>
+          </AnalysisDataProvider>
         </AnalysisParamsProvider>
       </body>
     </html>

@@ -204,6 +204,112 @@ class TestBacktest:
             assert point["isException"] == (point["loss"] > point["varThreshold"])
 
 
+class TestStressTest:
+    def test_a_custom_scenario_returns_the_weighted_impact(
+        self, client: TestClient
+    ) -> None:
+        response = client.post(
+            "/api/v1/stress-test",
+            json={
+                "weights": [
+                    {"ticker": "ASSET_A", "weight": 0.6, "sector": "Technology"},
+                    {"ticker": "ASSET_B", "weight": 0.4, "sector": "Banking"},
+                ],
+                "scenario": {
+                    "type": "custom",
+                    "name": "Custom adverse scenario",
+                    "shocks": {"ASSET_A": -0.10, "ASSET_B": -0.05},
+                },
+                "stressLimit": 0.08,
+            },
+        )
+        assert response.status_code == 200
+
+        payload = response.json()
+        # 0.6 * -0.10 + 0.4 * -0.05 = -0.08
+        assert payload["portfolioImpact"] == pytest.approx(-0.08)
+        assert payload["loss"] == pytest.approx(0.08)
+        assert payload["largestContributor"] == "ASSET_A"
+        assert payload["limitStatus"] == "warning"
+
+    def test_impacts_sum_to_the_reported_total(self, client: TestClient) -> None:
+        payload = client.post(
+            "/api/v1/stress-test",
+            json={
+                "weights": [
+                    {"ticker": "A", "weight": 0.25, "sector": "X"},
+                    {"ticker": "B", "weight": 0.75, "sector": "Y"},
+                ],
+                "scenario": {"shocks": {"A": -0.2, "B": -0.04}},
+            },
+        ).json()
+
+        total = sum(i["contribution"] for i in payload["impacts"])
+        assert total == pytest.approx(payload["portfolioImpact"])
+
+    def test_a_simulated_notional_is_scaled(self, client: TestClient) -> None:
+        payload = client.post(
+            "/api/v1/stress-test",
+            json={
+                "weights": [{"ticker": "A", "weight": 1.0, "sector": "X"}],
+                "scenario": {"shocks": {"A": -0.10}},
+                "notionalValue": 500_000,
+            },
+        ).json()
+        assert payload["notionalImpact"] == pytest.approx(-50_000.0)
+
+    def test_a_shock_on_an_unheld_asset_returns_422(self, client: TestClient) -> None:
+        response = client.post(
+            "/api/v1/stress-test",
+            json={
+                "weights": [{"ticker": "A", "weight": 1.0, "sector": "X"}],
+                "scenario": {"shocks": {"ZZZ": -0.10}},
+            },
+        )
+        assert response.status_code == 422
+        assert response.json()["detail"]["code"] == "INVALID_SCENARIO"
+
+    def test_a_historical_scenario_is_redirected_to_the_right_endpoint(
+        self, client: TestClient
+    ) -> None:
+        response = client.post(
+            "/api/v1/stress-test",
+            json={
+                "weights": [{"ticker": "A", "weight": 1.0, "sector": "X"}],
+                "scenario": {"type": "historical", "startDate": "2020-01-01"},
+            },
+        )
+        assert response.status_code == 400
+        assert response.json()["detail"]["code"] == "WRONG_ENDPOINT"
+
+    def test_a_historical_replay_reports_the_period_it_actually_used(
+        self, client: TestClient, market_csv: bytes, portfolio_csv: bytes
+    ) -> None:
+        response = client.post(
+            "/api/v1/stress-test/historical",
+            files=_files(market_csv, portfolio_csv),
+            data={"start_date": "2020-03-01", "end_date": "2020-04-30"},
+        )
+        assert response.status_code == 200
+
+        payload = response.json()
+        assert payload["scenarioType"] == "historical"
+        assert payload["periodStart"] >= "2020-03-01"
+        assert payload["periodEnd"] <= "2020-04-30"
+        assert len(payload["impacts"]) == 5
+
+    def test_a_historical_window_with_no_data_returns_422(
+        self, client: TestClient, market_csv: bytes, portfolio_csv: bytes
+    ) -> None:
+        response = client.post(
+            "/api/v1/stress-test/historical",
+            files=_files(market_csv, portfolio_csv),
+            data={"start_date": "2050-01-01", "end_date": "2050-02-01"},
+        )
+        assert response.status_code == 422
+        assert response.json()["detail"]["code"] == "INVALID_SCENARIO"
+
+
 class TestPrivacy:
     def test_uploads_are_not_written_to_disk(
         self, client: TestClient, market_csv: bytes, portfolio_csv: bytes, tmp_path

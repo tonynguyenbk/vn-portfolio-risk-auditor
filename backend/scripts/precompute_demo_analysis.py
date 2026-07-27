@@ -30,6 +30,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+import pandas as pd
+
 from app.schemas.analysis import (
     AnalysisConfig,
     Assumptions,
@@ -40,7 +42,10 @@ from app.schemas.analysis import (
 )
 from app.services.analysis import run_analysis
 from app.services.backtesting import compare_models, walk_forward_backtest
+from app.services.data_validation import clean_market_frame
 from app.services.portfolio_metrics import TRADING_DAYS_PER_YEAR
+from app.services.returns import pivot_long_prices
+from app.services.stress_testing import historical_scenario, worst_historical_window
 from app.services.var_models import QUANTILE_METHOD_DESCRIPTION
 from scripts.generate_demo_data import SEED, generate_market_data, generate_portfolio
 
@@ -141,8 +146,11 @@ def main() -> None:
         ),
     )
 
+    stress_payload = _build_stress_scenarios(market, portfolio, limits)
+
     _write(output_dir / "analysis.json", analysis_payload)
     _write(output_dir / "backtest.json", backtest.model_dump(by_alias=True, mode="json"))
+    _write(output_dir / "stress.json", stress_payload)
 
     print(f"analysis.json  {len(analysis_payload['portfolio']['wealthCurve']):,} curve points")
     print(f"backtest.json  {len(backtest.series):,} test days, {len(backtest.summary)} rows")
@@ -152,6 +160,105 @@ def main() -> None:
             f"exceptions {row.actual_exceptions:>4} / {row.expected_exceptions:>6.1f}  "
             f"rate {row.exception_rate:.4f}  p={row.kupiec_p_value:.4f}  {row.result}"
         )
+    print(f"stress.json    {len(stress_payload['scenarios'])} historical scenarios")
+    for scenario in stress_payload["scenarios"]:
+        print(
+            f"  {scenario['label']:<20} {scenario['periodStart']} to "
+            f"{scenario['periodEnd']}  impact {scenario['portfolioImpact']:>8.2%}  "
+            f"{scenario['limitStatus']}"
+        )
+
+
+def _build_stress_scenarios(
+    market: pd.DataFrame,
+    portfolio: pd.DataFrame,
+    limits: RiskLimits,
+) -> dict[str, Any]:
+    """Derive historical stress scenarios from the dataset itself.
+
+    Every scenario here is a real interval replayed against the portfolio
+    weights, located by the engine rather than invented. That matters: PRD 7.5
+    allows hypothetical scenarios, but a constructed shock vector says only
+    what its author assumed, whereas a replayed episode says what these assets
+    actually did together — including the correlation behaviour a hand-built
+    vector would have to guess at.
+
+    None of this is a forecast. The worst stretch in the sample is a
+    description of the past, not a prediction of the next one.
+    """
+    cleaned, _, _ = clean_market_frame(market)
+    prices = pivot_long_prices(cleaned)
+    weights = dict(zip(portfolio["ticker"], portfolio["weight"], strict=True))
+
+    scenarios: list[dict[str, Any]] = []
+
+    for window_days, label, note in (
+        (
+            5,
+            "Worst trading week",
+            "The five consecutive trading days in which the portfolio fell furthest.",
+        ),
+        (
+            20,
+            "Worst month",
+            "The twenty-day stretch with the deepest cumulative decline.",
+        ),
+        (
+            60,
+            "Worst quarter",
+            "The sixty-day stretch with the deepest cumulative decline.",
+        ),
+    ):
+        start, end = worst_historical_window(prices, weights, window_days=window_days)
+        result = historical_scenario(
+            prices=prices,
+            weights=weights,
+            start=start,
+            end=end,
+            scenario_name=label,
+            stress_limit=limits.max_stress_loss_pct,
+        )
+        scenarios.append(
+            {
+                "id": f"worst_{window_days}d",
+                "label": label,
+                "description": note,
+                "windowDays": window_days,
+                "scenarioName": result.scenario_name,
+                "scenarioType": "historical",
+                "portfolioImpact": round(result.portfolio_impact, 8),
+                "loss": round(result.loss, 8),
+                "largestContributor": result.largest_contributor,
+                "limitStatus": result.limit_status,
+                "stressLimit": limits.max_stress_loss_pct,
+                "periodStart": result.period_start.isoformat() if result.period_start else None,
+                "periodEnd": result.period_end.isoformat() if result.period_end else None,
+                "impacts": [
+                    {
+                        "ticker": impact.ticker,
+                        "weight": impact.weight,
+                        "shock": round(impact.shock, 8),
+                        "contribution": round(impact.contribution, 8),
+                    }
+                    for impact in result.impacts
+                ],
+            }
+        )
+
+    return {
+        "isSimulated": True,
+        "note": (
+            "Historical scenarios are replays of intervals located in the generated "
+            "dataset. They describe what happened, not what will."
+        ),
+        "weights": [
+            {"ticker": t, "weight": float(w), "sector": s}
+            for t, w, s in zip(
+                portfolio["ticker"], portfolio["weight"], portfolio["sector"], strict=True
+            )
+        ],
+        "scenarios": scenarios,
+    }
 
 
 def _write(path: Path, payload: object) -> None:

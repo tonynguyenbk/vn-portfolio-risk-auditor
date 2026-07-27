@@ -21,10 +21,17 @@
 import analysisJson from "@/public/demo/analysis.json";
 import backtestJson from "@/public/demo/backtest.json";
 import manifestJson from "@/public/demo/manifest.json";
-import type { AnalysisResult, BacktestResult, RiskLimits } from "@/types/analysis";
+import stressJson from "@/public/demo/stress.json";
+import type {
+  AnalysisResult,
+  BacktestResult,
+  RiskLimits,
+  StressBundle,
+} from "@/types/analysis";
 
 export const demoAnalysis = analysisJson as unknown as AnalysisResult;
 export const demoBacktest = backtestJson as unknown as BacktestResult;
+export const demoStress = stressJson as unknown as StressBundle;
 
 export interface DemoManifest {
   seed: number;

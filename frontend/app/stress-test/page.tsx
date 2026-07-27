@@ -1,10 +1,13 @@
+"use client";
+
+import { useAnalysisData } from "@/components/analysis-data-provider";
 import { SimulatedDataNotice } from "@/components/feedback/simulated-data-notice";
 import { StressTestPanel } from "@/components/stress/stress-test-panel";
 import { Panel, PanelBody, PanelHeader, PanelTitle } from "@/components/ui/panel";
-import { DEFAULT_LIMITS, demoAnalysis } from "@/lib/demo-data";
+import { DEFAULT_LIMITS } from "@/lib/demo-data";
 
 export default function StressTestPage() {
-  const analysis = demoAnalysis;
+  const { analysis, scenarios } = useAnalysisData();
 
   return (
     <div className="mx-auto flex max-w-[1400px] flex-col gap-4">
@@ -19,7 +22,11 @@ export default function StressTestPage() {
         <SimulatedDataNotice />
       </div>
 
-      <StressTestPanel weights={analysis.portfolio.weights} limits={DEFAULT_LIMITS} />
+      <StressTestPanel
+        weights={analysis.portfolio.weights}
+        limits={DEFAULT_LIMITS}
+        scenarios={scenarios}
+      />
 
       <Panel>
         <PanelHeader>

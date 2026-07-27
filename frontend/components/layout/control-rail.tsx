@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AlertTriangle, ChevronDown, Loader2, Play } from "lucide-react";
 import { useAnalysisParams } from "@/components/analysis-params-provider";
+import { DatasetPicker } from "@/components/inputs/dataset-picker";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
 import { SegmentedControl } from "@/components/ui/segmented-control";
@@ -54,22 +55,7 @@ export function ControlRail() {
     <div className="flex h-full flex-col">
       <div className="flex-1 overflow-y-auto">
         <Section title="Dataset">
-          <Field label="Source">
-            {(id) => (
-              <Select
-                id={id}
-                value={params.dataset}
-                onChange={(e) =>
-                  setParams({ dataset: e.target.value as "demo" | "upload" })
-                }
-              >
-                <option value="demo">Bundled demo (simulated)</option>
-                <option value="upload" disabled>
-                  Upload CSV — available in a later phase
-                </option>
-              </Select>
-            )}
-          </Field>
+          <DatasetPicker />
         </Section>
 
         <Section title="Portfolio">

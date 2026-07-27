@@ -1,17 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { AnalysisParamsProvider } from "@/components/analysis-params-provider";
 import { ControlRail } from "@/components/layout/control-rail";
 import { FilteredModelAudit } from "@/components/panels/filtered-model-audit";
 import { demoBacktest } from "@/lib/demo-data";
+import { renderWithProviders } from "./test-utils";
 
 function renderRail() {
-  return render(
-    <AnalysisParamsProvider>
-      <ControlRail />
-    </AnalysisParamsProvider>,
-  );
+  return renderWithProviders(<ControlRail />);
 }
 
 describe("Analysis control rail", () => {
@@ -74,11 +70,11 @@ describe("Analysis control rail", () => {
  */
 describe("Model and confidence controls drive the audit table", () => {
   function renderAudit() {
-    return render(
-      <AnalysisParamsProvider>
+    return renderWithProviders(
+      <>
         <ControlRail />
         <FilteredModelAudit rows={demoBacktest.summary} significance={0.05} />
-      </AnalysisParamsProvider>,
+      </>,
     );
   }
 
