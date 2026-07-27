@@ -1,0 +1,19 @@
+# Runtime dependencies for the Vercel Python function.
+#
+# Deliberately NOT the full backend dependency set. SciPy is a test-only
+# dependency — the engine computes chi-squared(1) with math.erfc and normal
+# quantiles with statistics.NormalDist — and pytest, ruff and coverage have no
+# place in a deployed bundle.
+#
+# Measured runtime footprint: ~79 MB against a 250 MB limit. SciPy alone is
+# ~96 MB, so excluding it more than doubles the headroom.
+#
+# uv.lock in backend/ is the authority for local development. This file exists
+# because the Vercel Python runtime reads requirements.txt; keep the two in step
+# when upgrading.
+
+fastapi>=0.115
+pydantic>=2.9
+python-multipart>=0.0.20
+numpy>=2.1
+pandas>=2.2

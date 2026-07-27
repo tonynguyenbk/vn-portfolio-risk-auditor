@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Cancel an in-flight run when a branch is pushed again; the older result is
+# no longer interesting.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend — ruff and pytest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Install dependencies
+        run: uv sync --directory backend --all-groups --frozen
+
+      - name: Lint
+        run: uv run --directory backend ruff check .
+
+      - name: Test
+        run: uv run --directory backend pytest -q
+
+  reproducibility:
+    name: Frozen data and precomputed analysis are current
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Install dependencies
+        run: uv sync --directory backend --all-groups --frozen
+
+      # The dashboard imports precomputed JSON produced by the engine. If the
+      # engine changes and the JSON is not regenerated, the site displays
+      # figures the current code no longer produces — a silent divergence that
+      # nothing else would catch. This job is the enforcement.
+      - name: Regenerate the demonstration dataset
+        run: uv run --directory backend python scripts/generate_demo_data.py
+
+      - name: Recompute the demonstration analysis
+        run: uv run --directory backend python scripts/precompute_demo_analysis.py
+
+      - name: Fail if anything differs from what is committed
+        run: |
+          if ! git diff --quiet -- frontend/public/demo; then
+            echo "::error::Committed demo data or precomputed analysis is stale."
+            echo ""
+            echo "The engine or the dataset changed without the artefacts being"
+            echo "regenerated. Run both scripts locally and commit the result:"
+            echo ""
+            echo "  uv run --directory backend python scripts/generate_demo_data.py"
+            echo "  uv run --directory backend python scripts/precompute_demo_analysis.py"
+            echo ""
+            git diff --stat -- frontend/public/demo
+            exit 1
+          fi
+          echo "Demo artefacts reproduce byte-identically."
+
+  frontend:
+    name: Frontend — lint, types, tests, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+
+      # Next.js 16 removed `next lint`, and `next build` no longer lints, so
+      # these are genuinely separate steps rather than redundant ones.
+      - name: Lint
+        run: npm run lint
+        working-directory: frontend
+
+      - name: Typecheck
+        run: npm run typecheck
+        working-directory: frontend
+
+      - name: Test
+        run: npm run test
+        working-directory: frontend
+
+      - name: Build
+        run: npm run build
+        working-directory: frontend

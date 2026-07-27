@@ -33,9 +33,9 @@ scenario would do to the portfolio.
 
 ## Current status
 
-Phases 1 to 6 of 7 are complete: the dashboard, the Python risk engine,
-walk-forward model validation, stress testing, CSV upload against the live API,
-and report export.
+All seven phases are implemented. The code is complete against the
+specification; what remains is not code but the written report, screenshots and
+the deployment itself.
 
 | Phase | Scope | Status |
 |---|---|---|
@@ -45,11 +45,16 @@ and report export.
 | 4 | Walk-forward backtesting and the Kupiec test | **Done** |
 | 5 | Stress testing, including historical scenarios | **Done** |
 | 6 | Reporting and CSV export | **Done** |
-| 7 | Research report, documentation, deployment | Not started |
+| 7 | Research report, documentation, deployment | **Documentation done; not yet deployed** |
 
-The remaining phase is written and deployed material rather than code: the
-research paper, the architecture diagram, screenshots, the demo script and the
-deployment itself. Nothing is deployed yet, and the repository is local only.
+Still outstanding, and all of it is authoring rather than engineering:
+
+- **Nothing is deployed and the repository is local only.** This is the gap that
+  matters most — a working site is the primary deliverable, and the deployment
+  configuration in this repository is written but unverified.
+- The 8–12 page research paper, for which [an outline](docs/research-report-outline.md) exists.
+- Screenshots, the poster, and the demonstration video (there is [a script](docs/demo-script.md)).
+- The author's reflection.
 
 Every figure on screen is now produced by the Python engine; the throwaway
 TypeScript mock that carried Phase 1 has been deleted.
@@ -67,6 +72,41 @@ same code the API runs, and regenerating is one command. The rule that keeps it
 honest is that the script must be re-run whenever the engine or the dataset
 changes.
 
+## What it does
+
+**Measure** — annualised volatility, maximum drawdown with its peak and trough
+dates, one-day VaR by three estimators at two confidence levels, historical
+Expected Shortfall, Herfindahl concentration and sector exposure.
+
+**Explain** — Euler decomposition of portfolio volatility, so risk share can be
+compared against weight share, plus a correlation matrix with the caveat that
+correlations rise under stress.
+
+**Validate** — walk-forward backtesting where every forecast sees only prior
+observations, scored with the Kupiec unconditional-coverage test, computed in
+log space with both boundary cases handled.
+
+**Stress** — historical episodes located in the data and replayed against the
+current weights, and hand-set custom shock vectors.
+
+**Report** — a printable audit summary and CSV export of metrics, the model
+audit, the full backtest series and the stress scenarios.
+
+**Upload** — bring your own market and portfolio CSVs; they are parsed in
+memory and never written to disk.
+
+## Documentation
+
+| Document | Contents |
+|---|---|
+| [Methodology](docs/methodology.md) | Every formula and convention, in reproducible detail |
+| [Limitations](docs/limitations.md) | What the results cannot tell you, and why |
+| [Architecture](docs/architecture.md) | Why the system is shaped this way |
+| [Data dictionary](data/DATA_DICTIONARY.md) | Schemas, validation rules, provenance record |
+| [Deployment](docs/deployment.md) | Hosting plan, and what to do when it resists |
+| [Research outline](docs/research-report-outline.md) | Scaffold for the written report |
+| [Demo script](docs/demo-script.md) | Shot-by-shot plan for the video |
+
 ## Stack
 
 **Frontend** — Next.js 16 (App Router), TypeScript, Tailwind CSS v4, Recharts,
@@ -81,8 +121,14 @@ Two deliberate choices worth flagging:
   degree of freedom is `math.erfc(sqrt(LR/2))`, and normal quantiles come from
   `statistics.NormalDist`. SciPy is kept in the test suite as an independent oracle to
   verify those implementations, which is stronger evidence of correctness than calling
-  SciPy directly would be — and keeps the deployed bundle small enough for a free
-  serverless tier.
+  SciPy directly would be — two implementations agreeing to machine precision rules out
+  an algebra error in a way one implementation cannot.
+
+  The secondary benefit is size. Measured on the resolved environment, the runtime
+  dependencies come to **79 MB** against the 250 MB serverless limit; SciPy alone is
+  **96 MB**. Keeping it out more than doubles the headroom and shortens cold starts —
+  though to be accurate, including it would still have fit. The correctness argument is
+  the one that actually motivated the choice.
 - **Field names are camelCase**, not the snake_case shown in PRD 16.3. The backend emits
   camelCase through a Pydantic alias generator so one convention holds end to end and no
   mapping layer is needed.
@@ -214,6 +260,46 @@ distribution adequately and the extreme tail badly.
 Neither result is a claim about Vietnamese markets. They describe how these
 estimators behave on this synthetic series, which is what the prototype is for.
 
+## Testing
+
+```bash
+uv run --directory backend pytest -q     # 329 tests
+npm --prefix frontend run test           # 69 tests
+```
+
+The suite is weighted towards the claims that would be most damaging if wrong:
+
+- **Independent verification.** The standard-library implementations of the
+  chi-squared(1) survival function, normal quantiles and the Kupiec statistic
+  are cross-checked against SciPy and against a binomial log-likelihood
+  difference. Two implementations agreeing to machine precision is stronger
+  evidence than one asserted.
+- **Temporal leakage.** Tested adversarially rather than structurally: a future
+  observation is replaced with a −50% day and every forecast must be
+  bit-for-bit unchanged. A second test places a shock mid-series and requires
+  earlier forecasts to be untouched *and* later ones to move, so it cannot pass
+  vacuously.
+- **Euler identity.** `Σ RCᵢ = σₚ` and each marginal contribution against a
+  numerical derivative.
+- **Reproducibility.** CI regenerates the dataset and the precomputed analysis
+  and fails if either differs from what is committed.
+
+## Example workflow
+
+1. Open the site. The bundled demonstration is already loaded — no request, no
+   waiting.
+2. **Overview** — read the four metric cards. Note that Expected Shortfall
+   (3.53%) sits well above VaR (2.16%): the tail is worse than the threshold
+   alone suggests.
+3. **Model Audit** — the table shows all three estimators. Uncheck a model or
+   switch to 99% in the rail; the table follows.
+4. Switch the chart to **Loss** view to see each day's realised loss against the
+   threshold forecast for it, with breaches marked.
+5. **Stress Test** — step through the historical episodes. The worst week costs
+   nearly 23%, against a one-day VaR of 2.16%.
+6. **Report** — print to PDF, or export any of the four CSVs.
+7. Optionally, switch the dataset to **Upload CSV** and supply your own files.
+
 ## Conventions
 
 These are fixed across the codebase and stated in the UI next to every result:
@@ -234,6 +320,33 @@ No price prediction, no buy/sell/hold recommendations, no portfolio optimisation
 MVP, no brokerage connectivity, no order placement, no authentication, no gamification.
 A Kupiec PASS is reported as "not statistically inconsistent with the target rate",
 never as proof that a model is correct, and no portfolio is ever labelled "safe".
+
+## Scientific basis
+
+| Concept | Source |
+|---|---|
+| Portfolio return, variance, diversification | Markowitz, H. (1952). "Portfolio Selection." *The Journal of Finance*, 7(1), 77–91 |
+| Expected Shortfall / CVaR | Rockafellar, R. T., & Uryasev, S. "Optimization of Conditional Value-at-Risk" |
+| Unconditional coverage test | Kupiec, P. H. (1995). "Techniques for Verifying the Accuracy of Risk Measurement Models" |
+| Backtesting in practice | Basel Committee, market-risk backtesting requirements (MAR32) |
+| Independence of exceptions *(not implemented — the gap)* | Christoffersen, P. (1998). "Evaluating Interval Forecasts" |
+| EWMA decay λ = 0.94 | J.P. Morgan/Reuters, *RiskMetrics Technical Document* |
+
+## Screenshots
+
+Not yet captured. They belong here once the site is deployed — see the
+[deployment guide](docs/deployment.md) for the post-deploy checklist.
+
+## Reflection
+
+*To be written by the author, covering the questions PRD 24 asks: why this
+problem, what mathematics was learned, what failed during development, how data
+leakage was prevented, why the limitations matter, and what a production system
+would require.*
+
+The commit history is the primary source for the "what failed" question — the
+defects it records were found by review rather than by the test suite, which is
+itself worth saying something about.
 
 ## Known advisories
 
