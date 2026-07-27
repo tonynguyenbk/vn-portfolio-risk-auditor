@@ -24,6 +24,16 @@
 export type DataStatus = "pass" | "warning" | "fail";
 export type LimitStatus = "within_limit" | "warning" | "breach";
 export type VarModel = "historical" | "parametric_normal" | "ewma_normal";
+
+/**
+ * The confidence levels the interface offers (PRD 4.1 fixes these two).
+ *
+ * This constrains the UI control only. Data arriving from the API is typed as
+ * plain `number`, because `AnalysisConfig.confidence_levels` on the Python side
+ * accepts any value in (0, 1) — a caller using the API directly can request
+ * 97.5%, and a narrower type here would be a claim about the backend that is
+ * not true.
+ */
 export type ConfidenceLevel = 0.95 | 0.99;
 
 export const MODEL_LABELS: Record<VarModel, string> = {
@@ -83,13 +93,14 @@ export interface PortfolioBlock {
 
 export interface VarEstimate {
   model: VarModel;
-  confidence: ConfidenceLevel;
+  /** Any level in (0, 1); the backend is not restricted to the UI's two. */
+  confidence: number;
   /** Positive loss magnitude, decimal. */
   value: number;
 }
 
 export interface ExpectedShortfallEstimate {
-  confidence: ConfidenceLevel;
+  confidence: number;
   value: number;
 }
 
@@ -179,13 +190,14 @@ export interface BacktestPoint {
 
 export interface BacktestSummaryRow {
   model: VarModel;
-  confidence: ConfidenceLevel;
+  confidence: number;
   observations: number;
   expectedExceptions: number;
   actualExceptions: number;
   exceptionRate: number;
   averageVar: number;
-  meanExceptionSeverity: number;
+  /** Null when no exception occurred — undefined, not zero. */
+  meanExceptionSeverity: number | null;
   kupiecLr: number;
   kupiecPValue: number;
   result: "pass" | "fail";

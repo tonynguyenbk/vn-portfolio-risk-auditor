@@ -17,8 +17,10 @@ import { Button } from "@/components/ui/button";
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const { runState, runAnalysis, validation } = useAnalysisParams();
+  const { params, runState, runAnalysis, validation } = useAnalysisParams();
   const calculating = runState === "calculating";
+  // Matches the rail: the bundled demonstration is already computed.
+  const isPrecomputed = params.dataset === "demo";
 
   // Escape closes the drawer, and body scroll is locked while it is open.
   useEffect(() => {
@@ -66,7 +68,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           variant="primary"
           className="flex-1"
           onClick={runAnalysis}
-          disabled={!validation.canRun || calculating}
+          disabled={!validation.canRun || calculating || isPrecomputed}
         >
           {calculating ? (
             <>

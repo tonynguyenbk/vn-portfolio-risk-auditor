@@ -11,24 +11,40 @@ import { MODEL_LABELS, type BacktestSummaryRow } from "@/types/analysis";
  * Selects the model whose exception rate sits closest to its target, among
  * those the Kupiec test did not reject.
  *
+ * The distance is **relative** — `|rate - target| / target` — not absolute.
+ * Rows at 95% and 99% are ranked against each other, and their targets differ
+ * five-fold, so an absolute gap means something quite different in each. A
+ * model missing the 99% target by 0.5 percentage points is 50% miscalibrated;
+ * the same absolute miss at 95% is 10%. Ranking on the raw difference would
+ * systematically flatter the higher confidence level, and on other data would
+ * name a model several times worse calibrated than the runner-up.
+ *
  * PRD 12 forbids choosing a model merely because it reports the smallest VaR,
  * and requires an honest "no single model dominates" outcome when the criteria
- * disagree. The full multi-criteria rule (severity, stability across volatility
- * regimes) arrives with Phase 4; this covers calibration only, and says so.
+ * disagree. Calibration is the only criterion applied here; severity and
+ * stability across volatility regimes belong to the regime analysis that PRD
+ * 4.2 places in a later phase.
  */
+const RELATIVE_TIE_THRESHOLD = 0.05;
+
 function bestCalibratedModel(rows: BacktestSummaryRow[]): string {
   const passing = rows.filter((row) => row.result === "pass");
   if (passing.length === 0) return "Inconclusive — no tested model passed the Kupiec test";
 
   const scored = passing
-    .map((row) => ({
-      row,
-      distance: Math.abs(row.exceptionRate - (1 - row.confidence)),
-    }))
+    .map((row) => {
+      const target = 1 - row.confidence;
+      return { row, distance: Math.abs(row.exceptionRate - target) / target };
+    })
     .sort((a, b) => a.distance - b.distance);
 
-  // A near-tie is not a meaningful ranking.
-  if (scored.length > 1 && Math.abs(scored[0].distance - scored[1].distance) < 0.0015) {
+  // Two models within a few percent of each other are not meaningfully ranked
+  // by this criterion alone, and saying so is the honest answer (PRD 12).
+  if (
+    scored.length > 1 &&
+    Math.abs(scored[0].distance - scored[1].distance) < RELATIVE_TIE_THRESHOLD &&
+    scored[0].row.model !== scored[1].row.model
+  ) {
     return "No single model dominates all evaluation criteria";
   }
 

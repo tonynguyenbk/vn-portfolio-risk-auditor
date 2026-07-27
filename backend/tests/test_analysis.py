@@ -163,6 +163,66 @@ class TestLimits:
         assert all(w.severity is Severity.WARNING for w in result.limits.warnings)
 
 
+class TestUnassessedLimitsAreNeverReportedAsPassing:
+    """A limit that was not checked must never read as a limit that passed.
+
+    Regression guard for a false-safety defect found in review: when the
+    configured confidence levels omitted 0.95, no VaR-95 figure existed, the
+    limit comparison was silently skipped, and the response came back
+    ``within_limit`` with no warnings — over a portfolio whose actual VaR was
+    50% above the configured limit. The UI rendered that as a green shield.
+
+    This is the same epistemic point the project already makes about the Kupiec
+    test: not rejecting is not the same as passing.
+    """
+
+    def test_omitting_the_95_percent_level_does_not_yield_a_clean_bill_of_health(
+        self, market: pd.DataFrame, portfolio: pd.DataFrame
+    ) -> None:
+        config = AnalysisConfig(confidence_levels=[0.975, 0.99])
+        limits = RiskLimits(max_var95_pct=0.02)
+
+        result = run_analysis(market, portfolio, config, limits).result
+
+        assert result.limits.status is not LimitStatus.WITHIN_LIMIT
+        assert any(w.code == "VAR_95_NOT_ASSESSED" for w in result.limits.warnings)
+
+    def test_the_unassessed_warning_says_plainly_that_it_is_not_a_pass(
+        self, market: pd.DataFrame, portfolio: pd.DataFrame
+    ) -> None:
+        config = AnalysisConfig(confidence_levels=[0.99])
+        result = run_analysis(market, portfolio, config).result
+
+        warning = next(w for w in result.limits.warnings if w.code == "VAR_95_NOT_ASSESSED")
+        assert "not a pass" in warning.message.lower()
+
+    def test_the_check_still_runs_when_95_percent_is_present(
+        self, market: pd.DataFrame, portfolio: pd.DataFrame
+    ) -> None:
+        # The guard must not fire when the check genuinely happened, or every
+        # normal run would carry a spurious warning.
+        config = AnalysisConfig(confidence_levels=[0.95, 0.99])
+        result = run_analysis(market, portfolio, config).result
+
+        assert not any(w.code == "VAR_95_NOT_ASSESSED" for w in result.limits.warnings)
+
+    def test_within_limit_is_only_reachable_when_every_check_ran_and_passed(
+        self, market: pd.DataFrame, portfolio: pd.DataFrame
+    ) -> None:
+        relaxed = RiskLimits(
+            max_var95_pct=0.5, max_single_asset_weight=1.0, max_sector_weight=1.0
+        )
+        with_check = run_analysis(
+            market, portfolio, AnalysisConfig(confidence_levels=[0.95]), relaxed
+        ).result
+        without_check = run_analysis(
+            market, portfolio, AnalysisConfig(confidence_levels=[0.99]), relaxed
+        ).result
+
+        assert with_check.limits.status is LimitStatus.WITHIN_LIMIT
+        assert without_check.limits.status is not LimitStatus.WITHIN_LIMIT
+
+
 class TestAssumptionsAreReported:
     def test_every_analytical_response_carries_its_assumptions(self, bundle) -> None:
         # PRD 0.9 and 16.4.

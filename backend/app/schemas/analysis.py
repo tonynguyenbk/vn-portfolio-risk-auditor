@@ -232,7 +232,9 @@ class BacktestSummaryRow(CamelModel):
     actual_exceptions: int
     exception_rate: float
     average_var: float
-    mean_exception_severity: float
+    #: Null when no exception occurred: the mean of an empty set is undefined,
+    #: and zero would misreport "no breaches" as "costless breaches".
+    mean_exception_severity: float | None
     kupiec_lr: float
     kupiec_p_value: float
     #: "pass" means the exception count is not statistically inconsistent with

@@ -120,6 +120,17 @@ class TestShape:
         with pytest.raises(ValueError, match="at least two"):
             walk_forward_backtest(returns, VarModel.HISTORICAL, 0.95, 1)
 
+    def test_an_unordered_index_is_rejected(self, returns: pd.Series) -> None:
+        # "Prior observations" is only meaningful on a sorted index.
+        shuffled = returns.sample(frac=1.0, random_state=0)
+        with pytest.raises(ValueError, match="sorted by date"):
+            walk_forward_backtest(shuffled, VarModel.HISTORICAL, 0.95, 100)
+
+    def test_a_duplicated_date_is_rejected(self, returns: pd.Series) -> None:
+        duplicated = pd.concat([returns, returns.iloc[[-1]]])
+        with pytest.raises(ValueError, match="duplicate dates"):
+            walk_forward_backtest(duplicated, VarModel.HISTORICAL, 0.95, 100)
+
 
 class TestExceptions:
     def test_an_exception_is_flagged_exactly_when_the_loss_exceeds_the_threshold(
@@ -139,30 +150,53 @@ class TestExceptions:
 
     def test_a_loss_exactly_on_the_threshold_is_not_an_exception(self) -> None:
         # The convention is strict inequality, L > VaR (PRD 9.11).
+        #
+        # A constant window of -1% gives losses that are all exactly 0.01, so
+        # every quantile of them is 0.01 too. The test day then lands precisely
+        # on its own threshold at a non-zero value, which is what makes this
+        # exercise the boundary rather than compare 0.0 with 0.0.
         series = pd.Series(
-            [0.0] * 10 + [-0.0],
-            index=pd.bdate_range("2024-01-01", periods=11),
+            [-0.01] * 21,
+            index=pd.bdate_range("2024-01-01", periods=21),
         )
-        result = walk_forward_backtest(series, VarModel.HISTORICAL, 0.95, 10)
-        assert result.series[0].loss == pytest.approx(result.series[0].var_threshold)
-        assert result.series[0].is_exception is False
+        result = walk_forward_backtest(series, VarModel.HISTORICAL, 0.95, 20)
 
-    def test_mean_severity_is_zero_when_nothing_breached(self) -> None:
-        flat = pd.Series(
-            np.zeros(60), index=pd.bdate_range("2024-01-01", periods=60)
+        point = result.series[0]
+        assert point.var_threshold == pytest.approx(0.01, abs=1e-15)
+        assert point.loss == pytest.approx(0.01, abs=1e-15)
+        assert point.is_exception is False
+
+    def test_a_loss_one_ulp_above_the_threshold_is_an_exception(self) -> None:
+        # The companion to the test above: the boundary is only meaningful if
+        # crossing it by any margin flips the flag.
+        series = pd.Series(
+            [-0.01] * 20 + [-0.0100001],
+            index=pd.bdate_range("2024-01-01", periods=21),
         )
+        result = walk_forward_backtest(series, VarModel.HISTORICAL, 0.95, 20)
+        assert result.series[0].is_exception is True
+
+    def test_mean_severity_is_undefined_when_nothing_breached(self) -> None:
+        # Not zero. There are no exception days to average, so the quantity
+        # does not exist, and zero would misreport "no breaches" as "costless
+        # breaches" (PRD 16.4).
+        flat = pd.Series(np.zeros(60), index=pd.bdate_range("2024-01-01", periods=60))
         result = walk_forward_backtest(flat, VarModel.HISTORICAL, 0.95, 50)
+
         assert result.exceptions == 0
-        assert result.mean_exception_severity == 0.0
+        assert result.mean_exception_severity is None
 
     def test_mean_severity_averages_only_the_breaching_days(
         self, returns: pd.Series
     ) -> None:
         result = walk_forward_backtest(returns, VarModel.HISTORICAL, 0.95, 100)
         breaches = [p.loss for p in result.series if p.is_exception]
+
         assert result.mean_exception_severity == pytest.approx(float(np.mean(breaches)))
-        # Severity must exceed the average threshold, or it is not a breach.
-        assert result.mean_exception_severity > 0
+        # Every breach exceeded its own threshold, so their mean must exceed
+        # the mean of the thresholds they breached.
+        breached_thresholds = [p.var_threshold for p in result.series if p.is_exception]
+        assert result.mean_exception_severity > float(np.mean(breached_thresholds))
 
 
 class TestCalibration:

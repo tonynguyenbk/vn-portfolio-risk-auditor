@@ -174,9 +174,8 @@ def run_analysis(
         hhi=herfindahl_hirschman_index(weight_vector),
     )
 
-    var95 = _lookup_var(var_estimates, 0.95)
     limits_block = _evaluate_limits(
-        var95=var95,
+        var_estimates=var_estimates,
         weights=weights_map,
         sectors=sector_series,
         limits=limits,
@@ -318,6 +317,10 @@ def _lookup_var(estimates: list[VarEstimate], confidence: float) -> float | None
     Historical Simulation is the reference for limit checking because it makes
     no distributional assumption. If the user deselected it, any available
     model at the same confidence is used rather than skipping the check.
+
+    Returns ``None`` only when nothing was estimated at that confidence level at
+    all. Callers must treat that as "not assessed", never as "passed" — see
+    :func:`_evaluate_limits`.
     """
     for estimate in estimates:
         if estimate.model is VarModel.HISTORICAL and estimate.confidence == confidence:
@@ -329,15 +332,41 @@ def _lookup_var(estimates: list[VarEstimate], confidence: float) -> float | None
 
 
 def _evaluate_limits(
-    var95: float | None,
+    var_estimates: list[VarEstimate],
     weights: dict[str, float],
     sectors: pd.Series,
     limits: RiskLimits,
 ) -> LimitsBlock:
-    """Compare results against the user-defined demonstration limits (PRD 8.4)."""
+    """Compare results against the user-defined demonstration limits (PRD 8.4).
+
+    The VaR lookup happens *inside* this function rather than at the call site,
+    so a check cannot be skipped without this code knowing it was skipped.
+
+    That distinction is the whole point. If the configured confidence levels do
+    not include 95%, no VaR-95 figure exists, and reporting "within limit"
+    would assert something the analysis never tested — the false-safety signal
+    a risk tool must never emit. An unassessed limit therefore raises a warning
+    of its own, and only a run in which every check was performed and passed can
+    reach ``WITHIN_LIMIT``. It is the same distinction the project already makes
+    about the Kupiec test: not rejecting is not the same as passing.
+    """
     warnings: list[LimitWarning] = []
 
-    if var95 is not None and var95 > limits.max_var95_pct:
+    var95 = _lookup_var(var_estimates, 0.95)
+
+    if var95 is None:
+        warnings.append(
+            LimitWarning(
+                code="VAR_95_NOT_ASSESSED",
+                severity=Severity.WARNING,
+                message=(
+                    "The VaR 95% limit could not be checked because no model was "
+                    "evaluated at 95% confidence. This is not a pass: the limit was "
+                    "not tested. Include 0.95 in the confidence levels to enable it."
+                ),
+            )
+        )
+    elif var95 > limits.max_var95_pct:
         warnings.append(
             LimitWarning(
                 code="VAR_95_LIMIT",

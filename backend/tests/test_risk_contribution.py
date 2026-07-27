@@ -29,9 +29,21 @@ class TestCovarianceAndCorrelation:
         assert cov.shape == (3, 3)
         assert np.allclose(cov, cov.T, atol=FLOAT_TOL)
 
-    def test_matches_numpy_cov(self, sample_returns: np.ndarray) -> None:
-        expected = np.cov(sample_returns, rowvar=False, ddof=1)
-        assert np.allclose(covariance_matrix(sample_returns), expected, atol=FLOAT_TOL)
+    def test_matches_a_hand_computed_covariance(self) -> None:
+        # Comparing against np.cov would be a tautology: the implementation is
+        # a call to np.cov. This works the n-1 denominator out by hand instead.
+        #
+        #   x = [1, 2, 3, 4]      mean 2.5
+        #   y = [2, 4, 5, 9]      mean 5.0
+        #   cov(x, y) = ((-1.5)(-3) + (-0.5)(-1) + (0.5)(0) + (1.5)(4)) / 3
+        #             = (4.5 + 0.5 + 0 + 6) / 3 = 11 / 3
+        #   var(x)    = (2.25 + 0.25 + 0.25 + 2.25) / 3 = 5 / 3
+        observations = np.array([[1.0, 2.0], [2.0, 4.0], [3.0, 5.0], [4.0, 9.0]])
+        cov = covariance_matrix(observations)
+
+        assert cov[0][0] == pytest.approx(5.0 / 3.0, rel=1e-14)
+        assert cov[0][1] == pytest.approx(11.0 / 3.0, rel=1e-14)
+        assert cov[1][0] == pytest.approx(11.0 / 3.0, rel=1e-14)
 
     def test_correlation_has_a_unit_diagonal(self, sample_returns: np.ndarray) -> None:
         correlation = correlation_from_covariance(covariance_matrix(sample_returns))

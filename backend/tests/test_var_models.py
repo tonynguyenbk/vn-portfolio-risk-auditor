@@ -138,6 +138,29 @@ class TestEwmaNormalVar:
         expected = -mu + 1.6448536269514722 * sigma
         assert almost_static == pytest.approx(expected, rel=1e-4)
 
+    def test_matches_the_closed_form_recursion_at_the_operating_lambda(self) -> None:
+        # The other EWMA tests are directional, or pin the initialisation by
+        # driving lambda towards 1. This one checks the recursion itself at the
+        # default 0.94 against the closed-form expansion:
+        #
+        #   sigma_T^2 = lambda^T * v_0 + (1 - lambda) * sum_i lambda^(T-1-i) (r_i - mu)^2
+        rng = np.random.default_rng(97)
+        returns = rng.standard_normal(250) * 0.012
+        lambda_ = 0.94
+
+        mu = float(np.mean(returns))
+        v0 = float(np.var(returns, ddof=1))
+        n = len(returns)
+
+        variance = (lambda_**n) * v0 + (1.0 - lambda_) * sum(
+            (lambda_ ** (n - 1 - i)) * (returns[i] - mu) ** 2 for i in range(n)
+        )
+        expected = -mu + normal_quantile(0.95) * float(np.sqrt(variance))
+
+        assert ewma_normal_var(returns, 0.95, lambda_) == pytest.approx(
+            expected, rel=1e-12
+        )
+
     def test_reacts_faster_to_a_volatility_jump_than_the_equally_weighted_model(
         self,
     ) -> None:

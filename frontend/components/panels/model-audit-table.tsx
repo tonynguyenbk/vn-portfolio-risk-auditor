@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Panel, PanelBody, PanelHeader, PanelTitle } from "@/components/ui/panel";
 import { InfoTooltip } from "@/components/ui/info-tooltip";
 import { formatConfidence, formatNumber, formatPercent, formatPValue } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { MODEL_LABELS, type BacktestSummaryRow } from "@/types/analysis";
 
 /**
@@ -14,9 +15,12 @@ import { MODEL_LABELS, type BacktestSummaryRow } from "@/types/analysis";
 export function ModelAuditTable({
   rows,
   significance,
+  emptyMessage,
 }: {
   rows: BacktestSummaryRow[];
   significance: number;
+  /** Shown instead of an empty table when the selection matches nothing. */
+  emptyMessage?: string;
 }) {
   return (
     <Panel>
@@ -34,8 +38,12 @@ export function ModelAuditTable({
       </PanelHeader>
 
       <PanelBody>
+        {rows.length === 0 && emptyMessage && (
+          <p className="py-6 text-center text-[13px] text-ink-muted">{emptyMessage}</p>
+        )}
+
         {/* Horizontally scrollable on narrow screens (PRD 13.11). */}
-        <div className="overflow-x-auto">
+        <div className={cn("overflow-x-auto", rows.length === 0 && "hidden")}>
           <table className="w-full min-w-[860px] text-left text-[13px]">
             <caption className="sr-only">
               Walk-forward backtesting results and Kupiec unconditional coverage test by

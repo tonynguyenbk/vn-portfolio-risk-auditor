@@ -104,11 +104,13 @@ export function AnalysisParamsProvider({ children }: { children: React.ReactNode
 
   const runAnalysis = useCallback(() => {
     if (!validation.canRun) return;
-    // Phase 1 renders precomputed demonstration data, so this only exercises
-    // the progress state described in PRD 15.1.5. The real request lands in
-    // Phase 3.
-    setRunState("calculating");
-    window.setTimeout(() => setRunState("complete"), 550);
+    // Intentionally does nothing while the dataset is the bundled demo: that
+    // analysis is precomputed by the Python engine at build time, so there is
+    // nothing to run. An artificial delay here would fake a computation that
+    // is not happening, which is exactly the kind of thing this project is
+    // meant not to do. The real request arrives with CSV upload, and the
+    // "calculating" state exists ready for it.
+    setRunState("complete");
   }, [validation.canRun]);
 
   const value = useMemo(

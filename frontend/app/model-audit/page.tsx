@@ -1,7 +1,7 @@
 import { RiskProfileChart } from "@/components/charts/risk-profile-chart";
 import { SimulatedDataNotice } from "@/components/feedback/simulated-data-notice";
 import { AssumptionsFooter } from "@/components/panels/assumptions-footer";
-import { ModelAuditTable } from "@/components/panels/model-audit-table";
+import { FilteredModelAudit } from "@/components/panels/filtered-model-audit";
 import { Panel, PanelBody, PanelHeader, PanelTitle } from "@/components/ui/panel";
 import { DEFAULT_LIMITS, demoAnalysis, demoBacktest } from "@/lib/demo-data";
 
@@ -40,7 +40,7 @@ export default function ModelAuditPage() {
         <SimulatedDataNotice />
       </div>
 
-      <ModelAuditTable
+      <FilteredModelAudit
         rows={demoBacktest.summary}
         significance={DEFAULT_LIMITS.testSignificance}
       />

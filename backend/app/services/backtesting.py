@@ -43,7 +43,8 @@ class BacktestResult:
     series: list[BacktestPoint]
     kupiec: KupiecResult
     average_var: float
-    mean_exception_severity: float
+    #: ``None`` when nothing breached. Undefined, not zero — see below.
+    mean_exception_severity: float | None
 
     @property
     def observations(self) -> int:
@@ -82,6 +83,17 @@ def walk_forward_backtest(
             f"{len(returns)} observations cannot support a {window}-observation "
             f"window; at least {window + 1} are required"
         )
+    # A module whose entire contract is temporal ordering should check its own
+    # precondition. Out-of-order input would still pair each loss with its own
+    # forecast, so the result would look correct while the dates attached to it
+    # were meaningless — and "prior observations" would no longer mean prior.
+    if not returns.index.is_monotonic_increasing:
+        raise ValueError(
+            "the return series must be sorted by date; walk-forward validation is "
+            "meaningless on an unordered index"
+        )
+    if returns.index.has_duplicates:
+        raise ValueError("the return series contains duplicate dates")
 
     values = returns.to_numpy(dtype=float)
     index = returns.index
@@ -118,10 +130,13 @@ def walk_forward_backtest(
         series=series,
         kupiec=kupiec,
         average_var=float(np.mean([p.var_threshold for p in series])),
-        # Mean severity is only defined when something breached. Zero would
-        # read as "the exceptions were costless" rather than "there were none".
+        # Mean severity is the average loss *on exception days*. With no
+        # exceptions there are no days to average, so the quantity does not
+        # exist. Returning 0.0 would read as "the breaches were costless"
+        # rather than "there were no breaches", and would drag any average
+        # taken over this column toward zero (PRD 16.4: null, never 0).
         mean_exception_severity=(
-            float(np.mean([p.loss for p in exceptions])) if exceptions else 0.0
+            float(np.mean([p.loss for p in exceptions])) if exceptions else None
         ),
     )
 

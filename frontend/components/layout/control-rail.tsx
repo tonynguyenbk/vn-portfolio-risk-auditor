@@ -12,10 +12,26 @@ import { cn } from "@/lib/utils";
 
 const MODELS: VarModel[] = ["historical", "parametric_normal", "ewma_normal"];
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  needsRecompute,
+  children,
+}: {
+  title: string;
+  /** Marks controls that cannot take effect until uploads are wired up. */
+  needsRecompute?: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <section className="border-b border-line px-4 py-4 last:border-b-0">
-      <Eyebrow className="mb-3 block">{title}</Eyebrow>
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <Eyebrow className="block">{title}</Eyebrow>
+        {needsRecompute && (
+          <span className="rounded border border-line px-1.5 py-0.5 text-[9px] uppercase tracking-[0.06em] text-ink-muted">
+            Later phase
+          </span>
+        )}
+      </div>
       <div className="flex flex-col gap-3">{children}</div>
     </section>
   );
@@ -31,6 +47,8 @@ export function ControlRail() {
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const calculating = runState === "calculating";
+  // Nothing to run while the bundled, already-computed dataset is selected.
+  const isPrecomputed = params.dataset === "demo";
 
   return (
     <div className="flex h-full flex-col">
@@ -67,13 +85,14 @@ export function ControlRail() {
           </Field>
         </Section>
 
-        <Section title="Date range">
+        <Section title="Date range" needsRecompute>
           <div className="grid grid-cols-2 gap-2">
             <Field label="Start">
               {(id) => (
                 <Input
                   id={id}
                   type="date"
+                  disabled
                   value={params.startDate}
                   onChange={(e) => setParams({ startDate: e.target.value })}
                 />
@@ -84,12 +103,17 @@ export function ControlRail() {
                 <Input
                   id={id}
                   type="date"
+                  disabled
                   value={params.endDate}
                   onChange={(e) => setParams({ endDate: e.target.value })}
                 />
               )}
             </Field>
           </div>
+          <p className="text-[11px] leading-snug text-ink-muted">
+            Narrowing the period requires re-running the engine, which arrives with
+            CSV upload.
+          </p>
         </Section>
 
         <Section title="Confidence">
@@ -104,11 +128,15 @@ export function ControlRail() {
           />
         </Section>
 
-        <Section title="Rolling window">
-          <Field label="Observations" hint="Trading days used to estimate each forecast.">
+        <Section title="Rolling window" needsRecompute>
+          <Field
+            label="Observations"
+            hint="Trading days used to estimate each forecast. The bundled analysis is precomputed at 250."
+          >
             {(id) => (
               <Select
                 id={id}
+                disabled
                 value={params.rollingWindow}
                 onChange={(e) => setParams({ rollingWindow: Number(e.target.value) })}
               >
@@ -140,9 +168,12 @@ export function ControlRail() {
               </label>
             ))}
           </fieldset>
+          <p className="text-[11px] leading-snug text-ink-muted">
+            Filters the model-audit comparison. All three are precomputed.
+          </p>
         </Section>
 
-        <Section title="Advanced assumptions">
+        <Section title="Advanced assumptions" needsRecompute>
           <button
             type="button"
             onClick={() => setAdvancedOpen((v) => !v)}
@@ -161,7 +192,10 @@ export function ControlRail() {
 
           {advancedOpen && (
             <div className="flex flex-col gap-3 pt-1">
-              <Field label="EWMA lambda" hint="Decay factor. RiskMetrics convention is 0.94.">
+              <Field
+                label="EWMA lambda"
+                hint="Decay factor. RiskMetrics convention is 0.94, which the bundled analysis uses."
+              >
                 {(id) => (
                   <Input
                     id={id}
@@ -169,6 +203,7 @@ export function ControlRail() {
                     step="0.01"
                     min="0.01"
                     max="0.99"
+                    disabled
                     value={params.ewmaLambda}
                     onChange={(e) => setParams({ ewmaLambda: Number(e.target.value) })}
                   />
@@ -179,6 +214,7 @@ export function ControlRail() {
                 {(id) => (
                   <Select
                     id={id}
+                    disabled
                     value={params.benchmark}
                     onChange={(e) => setParams({ benchmark: e.target.value })}
                   >
@@ -243,7 +279,7 @@ export function ControlRail() {
           variant="primary"
           className="w-full"
           onClick={runAnalysis}
-          disabled={!validation.canRun || calculating}
+          disabled={!validation.canRun || calculating || isPrecomputed}
         >
           {calculating ? (
             <>
@@ -257,6 +293,13 @@ export function ControlRail() {
             </>
           )}
         </Button>
+
+        {isPrecomputed && (
+          <p className="mt-2 text-[11px] leading-snug text-ink-muted">
+            The bundled demonstration is precomputed by the Python engine, so there
+            is nothing to run. This enables once CSV upload is available.
+          </p>
+        )}
       </div>
     </div>
   );
