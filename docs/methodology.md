@@ -23,9 +23,9 @@ These hold everywhere, in the engine, the API and the interface.
 | Empirical quantiles | Linear interpolation between order statistics |
 | Unavailable metric | `null`, never `0` |
 
-The sign conventions matter more than they look. A VaR of `0.0216` means "a
-2.16% loss", so larger always means more risk; a drawdown of `-0.437` means a
-43.7% decline. Mixing the two is the single easiest way to produce a risk report
+The sign conventions matter more than they look. A VaR of `0.0235` means "a
+2.35% loss", so larger always means more risk; a drawdown of `-0.547` means a
+54.7% decline. Mixing the two is the single easiest way to produce a risk report
 that is internally inconsistent and looks fine.
 
 ---

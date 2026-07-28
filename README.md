@@ -263,7 +263,7 @@ estimators behave on this synthetic series, which is what the prototype is for.
 ## Testing
 
 ```bash
-uv run --directory backend pytest -q     # 329 tests
+uv run --directory backend pytest -q     # 338 tests
 npm --prefix frontend run test           # 69 tests
 ```
 
@@ -289,14 +289,14 @@ The suite is weighted towards the claims that would be most damaging if wrong:
 1. Open the site. The bundled demonstration is already loaded — no request, no
    waiting.
 2. **Overview** — read the four metric cards. Note that Expected Shortfall
-   (3.53%) sits well above VaR (2.16%): the tail is worse than the threshold
+   (3.63%) sits well above VaR (2.35%): the tail is worse than the threshold
    alone suggests.
 3. **Model Audit** — the table shows all three estimators. Uncheck a model or
    switch to 99% in the rail; the table follows.
 4. Switch the chart to **Loss** view to see each day's realised loss against the
    threshold forecast for it, with breaches marked.
 5. **Stress Test** — step through the historical episodes. The worst week costs
-   nearly 23%, against a one-day VaR of 2.16%.
+   nearly 23%, against a one-day VaR of 2.35%.
 6. **Report** — print to PDF, or export any of the four CSVs.
 7. Optionally, switch the dataset to **Upload CSV** and supply your own files.
 

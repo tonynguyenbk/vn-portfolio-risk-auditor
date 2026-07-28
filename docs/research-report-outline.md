@@ -129,19 +129,19 @@ Include the architecture diagram.
 | Analysis period | 2018-01-01 → 2025-12-31 |
 | Aligned observations | 2,088 |
 | Assets | 5 + benchmark |
-| Annualised volatility | 23.72% |
-| Maximum drawdown | −43.73% |
+| Annualised volatility | 24.63% |
+| Maximum drawdown | −54.68% |
 
 ### 5.2 Risk metrics at the full-sample level
 
 | Metric | Value |
 |---|---|
-| One-day VaR 95% (Historical) | 2.16% |
-| Expected Shortfall 95% | 3.53% |
-| Largest risk contributor | ASSET_B |
-| HHI | (from the dashboard) |
+| One-day VaR 95% (Historical) | 2.35% |
+| Expected Shortfall 95% | 3.63% |
+| Largest risk contributor | ASSET_B (29.7% of portfolio volatility, on a 25% weight) |
+| HHI | 0.2100 |
 
-Note that ES exceeds VaR by roughly 63% — the tail is materially worse than the
+Note that ES exceeds VaR by roughly 55% — the tail is materially worse than the
 threshold alone suggests, which is the empirical answer to RQ5.
 
 ### 5.3 Model comparison and backtest — the core result
@@ -178,7 +178,7 @@ Worth a sentence: the worst *week* is more severe than the worst *month*,
 because the month window contains a partial recovery. Horizon choice changes the
 answer, which is itself a finding about how stress tests are specified.
 
-Compare the −22.99% week against the 2.16% one-day 95% VaR and discuss what that
+Compare the −22.99% week against the 2.35% one-day 95% VaR and discuss what that
 gap means about extrapolating daily risk measures.
 
 ### 5.5 Risk contribution

@@ -18,9 +18,9 @@ Total: ~2:45. Timings are guides, not targets.
 
 **On screen:** Overview page, already loaded.
 
-Point at the VaR 95% card — 2.16%.
+Point at the VaR 95% card — 2.35%.
 
-> "This says the portfolio should lose more than 2.16% on about one day in
+> "This says the portfolio should lose more than 2.35% on about one day in
 > twenty. That's a testable claim, and almost nothing checks it."
 
 Say early and once that the data is simulated. Do not belabour it; the badge is
@@ -37,7 +37,7 @@ everything.
 
 - Four metric cards — volatility, VaR, Expected Shortfall, maximum drawdown.
 - One sentence on why ES is there: *"VaR marks the edge of the tail. Expected
-  Shortfall tells you what's inside it — 3.53% against a 2.16% threshold."*
+  Shortfall tells you what's inside it — 3.63% against a 2.35% threshold."*
 - Risk contribution panel: *"Where the risk comes from is a different question
   from where the money is."*
 
@@ -97,7 +97,7 @@ Click through the historical episodes.
 
 Point at the worst week: −22.99%.
 
-> "The worst week costs almost 23%. The one-day 95% VaR was 2.16%. That gap is
+> "The worst week costs almost 23%. The one-day 95% VaR was 2.35%. That gap is
 > the argument for stress testing existing at all."
 
 Optionally drag one custom slider to show it responds live. Two seconds, no more.
