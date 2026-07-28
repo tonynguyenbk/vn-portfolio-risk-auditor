@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { AlertTriangle, ChevronDown, Loader2, Play } from "lucide-react";
+import { useAnalysisData } from "@/components/analysis-data-provider";
 import { useAnalysisParams } from "@/components/analysis-params-provider";
 import { DatasetPicker } from "@/components/inputs/dataset-picker";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Eyebrow } from "@/components/ui/panel";
+import { DEFAULT_LIMITS } from "@/lib/demo-data";
 import { MODEL_LABELS, type ConfidenceLevel, type VarModel } from "@/types/analysis";
 import { cn } from "@/lib/utils";
 
@@ -43,13 +45,12 @@ function Section({
  * user-input table in PRD 10.1.
  */
 export function ControlRail() {
-  const { params, setParams, toggleModel, runState, runAnalysis, validation } =
-    useAnalysisParams();
+  const { params, setParams, toggleModel, validation } = useAnalysisParams();
+  const { uploadState, error: runError, runOnDemoData } = useAnalysisData();
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
-  const calculating = runState === "calculating";
-  // Nothing to run while the bundled, already-computed dataset is selected.
-  const isPrecomputed = params.dataset === "demo";
+  const calculating = uploadState === "uploading";
+  const isDemo = params.dataset === "demo";
 
   return (
     <div className="flex h-full flex-col">
@@ -264,8 +265,8 @@ export function ControlRail() {
         <Button
           variant="primary"
           className="w-full"
-          onClick={runAnalysis}
-          disabled={!validation.canRun || calculating || isPrecomputed}
+          onClick={() => runOnDemoData(params, DEFAULT_LIMITS)}
+          disabled={!validation.canRun || calculating || !isDemo}
         >
           {calculating ? (
             <>
@@ -280,10 +281,28 @@ export function ControlRail() {
           )}
         </Button>
 
-        {isPrecomputed && (
+        {isDemo && runError && (
+          <div
+            role="alert"
+            className="mt-2 flex gap-2 rounded-md border border-coral/40 bg-[var(--coral-soft)] p-2.5"
+          >
+            <AlertTriangle aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-coral" />
+            <p className="text-[12px] leading-snug text-ink-secondary">{runError.message}</p>
+          </div>
+        )}
+
+        {isDemo && !runError && (
           <p className="mt-2 text-[11px] leading-snug text-ink-muted">
-            The bundled demonstration is precomputed by the Python engine, so there
-            is nothing to run. This enables once CSV upload is available.
+            Sends the bundled dataset to the Python engine and displays what comes
+            back. The figures shown are precomputed from the same engine, so a live
+            run should reproduce them exactly.
+          </p>
+        )}
+
+        {!isDemo && (
+          <p className="mt-2 text-[11px] leading-snug text-ink-muted">
+            Use <span className="text-ink-secondary">Analyse uploaded files</span> in
+            the Dataset section above.
           </p>
         )}
       </div>

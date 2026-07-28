@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { Loader2, Play, SlidersHorizontal, X } from "lucide-react";
+import { useAnalysisData } from "@/components/analysis-data-provider";
 import { useAnalysisParams } from "@/components/analysis-params-provider";
 import { AppHeader } from "./app-header";
 import { ControlRail } from "./control-rail";
 import { Button } from "@/components/ui/button";
+import { DEFAULT_LIMITS } from "@/lib/demo-data";
 
 /**
  * Application frame.
@@ -17,10 +19,10 @@ import { Button } from "@/components/ui/button";
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const { params, runState, runAnalysis, validation } = useAnalysisParams();
-  const calculating = runState === "calculating";
-  // Matches the rail: the bundled demonstration is already computed.
-  const isPrecomputed = params.dataset === "demo";
+  const { params, validation } = useAnalysisParams();
+  const { uploadState, runOnDemoData } = useAnalysisData();
+  const calculating = uploadState === "uploading";
+  const isDemo = params.dataset === "demo";
 
   // Escape closes the drawer, and body scroll is locked while it is open.
   useEffect(() => {
@@ -67,8 +69,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Button
           variant="primary"
           className="flex-1"
-          onClick={runAnalysis}
-          disabled={!validation.canRun || calculating || isPrecomputed}
+          onClick={() => runOnDemoData(params, DEFAULT_LIMITS)}
+          disabled={!validation.canRun || calculating || !isDemo}
         >
           {calculating ? (
             <>

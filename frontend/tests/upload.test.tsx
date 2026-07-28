@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { ControlRail } from "@/components/layout/control-rail";
 import { DatasetPicker } from "@/components/inputs/dataset-picker";
 import { SimulatedDataNotice } from "@/components/feedback/simulated-data-notice";
 import { demoAnalysis } from "@/lib/demo-data";
@@ -148,6 +149,94 @@ describe("When the data is rejected", () => {
 
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent(/Adjust them to 100%/);
+  });
+});
+
+describe("Run analysis on the bundled dataset", () => {
+  /**
+   * Routes the two bundled CSV fetches to blobs and the API calls to JSON, so
+   * the whole path — load files, POST, display — is exercised.
+   */
+  function mockDemoRun(analysisBody: unknown) {
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/demo/")) {
+        return { ok: true, status: 200, blob: async () => new Blob(["csv"]) } as Response;
+      }
+      if (url.includes("/backtest")) {
+        return jsonResponse({ series: [], summary: [], assumptions: {} });
+      }
+      return jsonResponse(analysisBody);
+    });
+  }
+
+  it("sends the bundled files to the engine and shows what comes back", async () => {
+    const recomputed = structuredClone(demoAnalysis);
+    recomputed.metrics.annualisedVolatility = 0.31;
+    mockDemoRun(recomputed);
+
+    const user = userEvent.setup();
+    renderWithProviders(<ControlRail />);
+
+    const button = screen.getByRole("button", { name: /run analysis/i });
+    expect(button).toBeEnabled();
+    await user.click(button);
+
+    await waitFor(() => {
+      const urls = vi.mocked(fetch).mock.calls.map((c) => String(c[0]));
+      expect(urls.some((u) => u.includes("/demo/market_data.csv"))).toBe(true);
+      expect(urls.some((u) => u.includes("/demo/portfolio.csv"))).toBe(true);
+      expect(urls.some((u) => u.includes("/api/v1/analyse"))).toBe(true);
+    });
+  });
+
+  it("keeps the simulated-data label after a live run on the bundled data", async () => {
+    // The engine marks any upload as real data because it cannot know the
+    // provenance of a CSV. The caller does know, so the label must survive.
+    const recomputed = structuredClone(demoAnalysis);
+    recomputed.metadata.isSimulated = false;
+    mockDemoRun(recomputed);
+
+    const user = userEvent.setup();
+    renderWithProviders(
+      <>
+        <ControlRail />
+        <SimulatedDataNotice />
+      </>,
+    );
+
+    await user.click(screen.getByRole("button", { name: /run analysis/i }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Educational prototype • Simulated data/),
+      ).toBeInTheDocument();
+    });
+    expect(screen.queryByText(/Analysing uploaded data/)).not.toBeInTheDocument();
+  });
+
+  it("reports a failed live run without discarding the displayed analysis", async () => {
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL) => {
+      if (String(input).includes("/demo/")) {
+        return { ok: true, status: 200, blob: async () => new Blob(["csv"]) } as Response;
+      }
+      throw new TypeError("Failed to fetch");
+    });
+
+    const user = userEvent.setup();
+    renderWithProviders(
+      <>
+        <ControlRail />
+        <SimulatedDataNotice />
+      </>,
+    );
+
+    await user.click(screen.getByRole("button", { name: /run analysis/i }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent(/Could not reach the analysis service/);
+    // The precomputed figures are still on screen.
+    expect(screen.getByText(/Educational prototype • Simulated data/)).toBeInTheDocument();
   });
 });
 

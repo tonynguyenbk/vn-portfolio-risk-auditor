@@ -10,13 +10,14 @@ import type { AnalysisParams, VarModel } from "@/types/analysis";
  * between Overview / Model Audit / Stress Test / Report. That satisfies PRD
  * 15.1.7 ("preserve selected parameters when navigating between sections").
  *
- * Phase 1 keeps this in memory only. PRD 14.1 also asks for shareable section
- * state in the URL; syncing to search params is deferred to the phase that
- * introduces real analysis runs, so that a URL never encodes a result the
- * backend cannot reproduce.
+ * Only the user's *selections* live here. Whichever analysis is being displayed,
+ * and the state of any run in flight, belong to AnalysisDataProvider — keeping
+ * intent separate from result means a failed run cannot corrupt the parameters
+ * that produced it.
+ *
+ * Kept in memory. PRD 14.1 also asks for shareable section state in the URL;
+ * that is deferred rather than dropped.
  */
-
-export type RunState = "idle" | "calculating" | "complete";
 
 export const DEFAULT_PARAMS: AnalysisParams = {
   dataset: "demo",
@@ -42,8 +43,6 @@ interface AnalysisParamsContextValue {
   params: AnalysisParams;
   setParams: (patch: Partial<AnalysisParams>) => void;
   toggleModel: (model: VarModel) => void;
-  runState: RunState;
-  runAnalysis: () => void;
   validation: ValidationResult;
 }
 
@@ -85,7 +84,6 @@ function validate(params: AnalysisParams): ValidationResult {
 
 export function AnalysisParamsProvider({ children }: { children: React.ReactNode }) {
   const [params, setParamsState] = useState<AnalysisParams>(DEFAULT_PARAMS);
-  const [runState, setRunState] = useState<RunState>("complete");
 
   const setParams = useCallback((patch: Partial<AnalysisParams>) => {
     setParamsState((prev) => ({ ...prev, ...patch }));
@@ -102,20 +100,9 @@ export function AnalysisParamsProvider({ children }: { children: React.ReactNode
 
   const validation = useMemo(() => validate(params), [params]);
 
-  const runAnalysis = useCallback(() => {
-    if (!validation.canRun) return;
-    // Intentionally does nothing while the dataset is the bundled demo: that
-    // analysis is precomputed by the Python engine at build time, so there is
-    // nothing to run. An artificial delay here would fake a computation that
-    // is not happening, which is exactly the kind of thing this project is
-    // meant not to do. The real request arrives with CSV upload, and the
-    // "calculating" state exists ready for it.
-    setRunState("complete");
-  }, [validation.canRun]);
-
   const value = useMemo(
-    () => ({ params, setParams, toggleModel, runState, runAnalysis, validation }),
-    [params, setParams, toggleModel, runState, runAnalysis, validation],
+    () => ({ params, setParams, toggleModel, validation }),
+    [params, setParams, toggleModel, validation],
   );
 
   return (

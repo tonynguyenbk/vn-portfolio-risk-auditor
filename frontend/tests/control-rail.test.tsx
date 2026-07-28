@@ -11,13 +11,15 @@ function renderRail() {
 }
 
 describe("Analysis control rail", () => {
-  it("does not offer to run an analysis that is already precomputed", () => {
-    // The bundled demonstration is computed by the Python engine at build
-    // time. A live-looking Run button here would fake a computation that is
-    // not happening.
+  it("offers a real run against the live engine on the bundled dataset", () => {
+    // Earlier this button ran a fake 550ms spinner over a precomputed result;
+    // then it was disabled, which read as a fault. It now sends the bundled
+    // CSVs to the engine for an actual computation.
     renderRail();
-    expect(screen.getByRole("button", { name: /run analysis/i })).toBeDisabled();
-    expect(screen.getByText(/precomputed by the Python engine/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /run analysis/i })).toBeEnabled();
+    expect(
+      screen.getByText(/Sends the bundled dataset to the Python engine/i),
+    ).toBeInTheDocument();
   });
 
   it("disables the controls that would require re-running the engine", () => {

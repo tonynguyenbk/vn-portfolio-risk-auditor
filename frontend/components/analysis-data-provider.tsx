@@ -40,6 +40,8 @@ interface AnalysisDataContextValue {
     params: AnalysisParams,
     limits: RiskLimits,
   ) => Promise<void>;
+  /** Re-run the engine live over the bundled dataset (see below). */
+  runOnDemoData: (params: AnalysisParams, limits: RiskLimits) => Promise<void>;
   resetToDemo: () => void;
 }
 
@@ -92,6 +94,60 @@ export function AnalysisDataProvider({ children }: { children: React.ReactNode }
     [],
   );
 
+  /**
+   * Send the bundled dataset to the live engine and display what comes back.
+   *
+   * This is what "Run analysis" does on the demonstration. The alternative
+   * considered — disabling the button because the result is already
+   * precomputed — was honest but left the interface's primary control greyed
+   * out on arrival, which readers took for a fault.
+   *
+   * Running for real is better than both that and the fake progress bar it
+   * replaced, because the recomputed figures should match the precomputed ones
+   * exactly. Clicking the button is therefore a demonstration that the static
+   * JSON is a cache of this engine's output rather than numbers typed in by
+   * hand — a claim the project makes repeatedly and can now be checked in one
+   * click.
+   */
+  const runOnDemoData = useCallback(
+    async (params: AnalysisParams, limits: RiskLimits) => {
+      setUploadState("uploading");
+      setError(null);
+
+      try {
+        const [market, portfolio] = await Promise.all([
+          fetchDemoFile("market_data.csv"),
+          fetchDemoFile("portfolio.csv"),
+        ]);
+
+        const result = await analyse(market, portfolio, params, limits);
+        // The engine receives CSVs and cannot know their provenance, so it
+        // marks any upload as real data. Here the caller *does* know: these are
+        // the bundled synthetic files. Correcting the flag keeps the
+        // simulated-data label accurate, which matters more than deferring to
+        // the payload.
+        result.metadata.isSimulated = true;
+        result.metadata.datasetName = demoAnalysis.metadata.datasetName;
+        setAnalysis(result);
+
+        const backtested = await backtest(market, portfolio, params, limits);
+        setBacktestResult(backtested);
+
+        setScenarios(demoStress.scenarios);
+        setSource("demo");
+        setUploadState("complete");
+      } catch (caught) {
+        setError(
+          caught instanceof ApiError
+            ? caught
+            : new ApiError(0, { code: "UNKNOWN", message: String(caught) }),
+        );
+        setUploadState("error");
+      }
+    },
+    [],
+  );
+
   const resetToDemo = useCallback(() => {
     setAnalysis(demoAnalysis);
     setBacktestResult(demoBacktest);
@@ -110,14 +166,38 @@ export function AnalysisDataProvider({ children }: { children: React.ReactNode }
       uploadState,
       error,
       runUpload,
+      runOnDemoData,
       resetToDemo,
     }),
-    [analysis, backtestResult, scenarios, source, uploadState, error, runUpload, resetToDemo],
+    [
+      analysis,
+      backtestResult,
+      scenarios,
+      source,
+      uploadState,
+      error,
+      runUpload,
+      runOnDemoData,
+      resetToDemo,
+    ],
   );
 
   return (
     <AnalysisDataContext.Provider value={value}>{children}</AnalysisDataContext.Provider>
   );
+}
+
+/**
+ * Load a bundled CSV from `public/demo` as a File, so the same code path that
+ * handles a user upload handles this one — no special case in the API client.
+ */
+async function fetchDemoFile(name: string): Promise<File> {
+  const response = await fetch(`/demo/${name}`);
+  if (!response.ok) {
+    throw new Error(`Could not load the bundled ${name}.`);
+  }
+  const blob = await response.blob();
+  return new File([blob], name, { type: "text/csv" });
 }
 
 export function useAnalysisData(): AnalysisDataContextValue {
