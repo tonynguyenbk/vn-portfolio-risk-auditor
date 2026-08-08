@@ -338,8 +338,15 @@ never as proof that a model is correct, and no portfolio is ever labelled "safe"
 
 ## Screenshots
 
-Not yet captured. They belong here once the site is deployed — see the
-[deployment guide](docs/deployment.md) for the post-deploy checklist.
+Captured from the live deployment at
+[vnportfolioriskauditor.vercel.app](https://vnportfolioriskauditor.vercel.app).
+
+| | |
+|---|---|
+| **Overview** | ![Overview](docs/screenshots/overview.png) |
+| **Model Audit** | ![Model Audit](docs/screenshots/model-audit.png) |
+| **Stress Test** | ![Stress Test](docs/screenshots/stress-test.png) |
+| **Report** | ![Report](docs/screenshots/report.png) |
 
 ## Reflection
 
