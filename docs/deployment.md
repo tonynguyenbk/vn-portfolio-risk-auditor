@@ -1,11 +1,13 @@
 # Deployment
 
-> **Status: written, not yet verified.** Nothing has been deployed. The
-> configuration in `vercel.json`, `api/index.py` and `requirements.txt` is a
-> considered starting point, not a proven one — a monorepo with a Python
-> function alongside a Next.js app in a subdirectory is exactly the arrangement
-> that tends to need one or two adjustments on first contact. This document
-> records what to expect and what to do if it does not work first time.
+> **Status: verified.** Deployed 2026-08-08 to
+> **https://vnportfolioriskauditor.vercel.app**. The plan this document
+> originally described — a single Python function under `api/` — did not
+> survive first contact: it failed with exactly the "Next.js not detected"
+> error anticipated below. What shipped instead uses Vercel's Services
+> feature, which was not part of the original plan. The steps below describe
+> what actually worked; the discarded approach is kept as a documented failure
+> mode rather than deleted, since it is now confirmed rather than anticipated.
 
 Everything used here is free. Total running cost: nothing.
 
@@ -43,61 +45,82 @@ git push -u origin main
 
 Confirm the CI workflow runs and passes before continuing.
 
-### 2. Deploy the site
+### 2. Deploy with Vercel Services
 
-Import the repository at [vercel.com/new](https://vercel.com/new).
+`vercel.json` at the repository root already declares two independent
+services — no manual Root Directory setting is needed:
 
-The Hobby plan is free and requires non-commercial use, which an educational
-portfolio project satisfies.
+```json
+{
+  "services": {
+    "frontend": { "root": "frontend", "framework": "nextjs" },
+    "backend": { "root": "backend", "framework": "fastapi", "entrypoint": "app.main:app" }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": { "service": "backend" } },
+    { "source": "/(.*)", "destination": { "service": "frontend" } }
+  ]
+}
+```
 
-If Vercel does not pick up the configuration automatically, set:
-
-| Setting | Value |
-|---|---|
-| Framework preset | Next.js |
-| Root directory | `frontend` |
-| Build command | *(default)* |
-
-Setting the root directory to `frontend` is the simplest arrangement and is
-worth trying first. **It disables the Python function**, because `api/` then
-falls outside the build context — which is fine, and is exactly the split
-described in step 4.
+Import the repository at [vercel.com/new](https://vercel.com/new), or deploy
+from the CLI with `vercel --prod`. The Hobby plan is free and requires
+non-commercial use, which an educational portfolio project satisfies. Vercel
+builds each service independently and routes `/api/*` to the backend,
+everything else to the frontend, on one domain — so there is no CORS in
+production and no separate host to manage.
 
 Verify: all four routes load, the metric cards show numbers, the Model Audit
-table is populated, and the stress scenarios appear. None of that requires the
-API.
-
-### 3. Try the Python function
-
-Only if you want uploads on the same origin.
-
-Set the root directory back to the repository root so `vercel.json` governs the
-build. Expect to iterate here.
-
-**Things that plausibly go wrong**
-
-| Symptom | Likely cause |
-|---|---|
-| Next.js not detected | Root directory or `outputDirectory` wrong for the monorepo layout |
-| `ModuleNotFoundError: app` | `sys.path` insertion in `api/index.py` not resolving on the runtime's filesystem |
-| Function exceeds size limit | Unlikely — measured at 79 MB against 250 MB — but Linux wheels differ from the Windows measurement |
-| 404 on `/api/v1/health` | The rewrite not matching; check `rewrites` in `vercel.json` |
-| Timeout on first request | Cold start. `maxDuration` is set to 60s |
-
-Verify with:
+table is populated, the stress scenarios appear, and:
 
 ```bash
 curl https://<your-deployment>/api/v1/health
 # {"status":"ok","version":"0.1.0"}
 ```
 
-### 4. Fallback: split the deployment
+### What the original plan got wrong
 
-If the single-origin arrangement resists, take the split. It is not a defeat —
-it is arguably the more robust arrangement, and it is what the fallback plan
-assumed from the start.
+The plan this document originally described — a single Python function at
+`api/index.py`, driven by `vercel.json`'s top-level `functions` key and a
+manual Root Directory override — was written before deploying, and it failed
+on first contact: Vercel's Next.js detection runs against the repository
+root regardless of a custom `buildCommand`, and with no `package.json` there,
+it reports "No Next.js version detected" rather than building anything.
 
-- **Site** on Vercel with root directory `frontend`.
+Services fixes this by giving each half of the app its own root, built
+independently, instead of forcing one Root Directory setting to cover a
+Next.js app in `frontend/` and a Python function elsewhere. `api/index.py` —
+the `sys.path` adapter that let the old approach import `backend/app` from
+under `api/` — is no longer needed and has been deleted; the backend service
+imports `app.main:app` directly, rooted at `backend/`.
+
+**Things that plausibly still go wrong**
+
+| Symptom | Likely cause |
+|---|---|
+| Next.js not detected | Reverted to the old `functions`-based `vercel.json` without a per-service root |
+| `ModuleNotFoundError: app` | The backend service's `root` isn't `backend/`, or `entrypoint` isn't `app.main:app` |
+| Function exceeds size limit | Unlikely — measured at 79 MB against 250 MB — but see the open issue below |
+| 404 on `/api/v1/health` | The rewrite not matching; check `rewrites` in `vercel.json` |
+| Timeout on first request | Cold start |
+
+**Open issue, not yet resolved.** The deployed backend service installs from
+`backend/pyproject.toml` / `uv.lock` — the full development dependency set,
+including SciPy — rather than the trimmed `backend/requirements.txt`
+described in the README's size rationale (79 MB vs. SciPy's 96 MB). The
+deploy works and stays well under the 250 MB limit either way, so this has
+not blocked anything, but the deliberate "no SciPy at runtime" design is not
+actually in effect on Vercel yet. Worth revisiting: either get the Services
+Python builder to prefer `requirements.txt`, or update the README's
+dependency claim to match what is actually deployed.
+
+### 3. Fallback: split the deployment
+
+Not needed today, but worth keeping in reserve for if the serverless bundle
+ever stops fitting — a future dependency bump that pulls in something heavy,
+for instance.
+
+- **Site** on Vercel, unchanged.
 - **API** on [Hugging Face Spaces](https://huggingface.co/spaces) (free, Docker,
   no bundle limit) or any host that runs a Python process.
 - Set `NEXT_PUBLIC_API_URL` in the Vercel project to the API's origin.
@@ -116,6 +139,9 @@ depended on the API.
 | `ALLOWED_ORIGINS` | Backend host | Comma-separated CORS allowlist. Only needed when split. |
 | `MAX_UPLOAD_BYTES` | Backend host | Upload cap. Defaults to 8 MB. |
 
+Currently unset on the Vercel project — confirmed with `vercel env ls`, which
+returns none. The deployment is same-origin.
+
 No secrets. The application has no database, no authentication and no
 third-party credentials, so there is nothing to leak.
 
@@ -123,13 +149,14 @@ third-party credentials, so there is nothing to leak.
 
 ## After deploying
 
-- [ ] All four routes load, with numbers, in an incognito window
+- [x] All four routes load, with numbers (verified by screenshot, not yet in an incognito window)
 - [ ] Mobile layout works on a real phone, not just a resized browser
 - [ ] The Report page prints without clipped content
-- [ ] `/api/v1/health` responds, or the split fallback is in place and uploads work
+- [x] `/api/v1/health` responds
 - [ ] Upload the bundled CSVs from `frontend/public/demo/` end to end
-- [ ] CI badge green on the README
-- [ ] Screenshots captured for the README and the poster
+- [ ] CI badge green on the README — currently failing on an unrelated, pre-existing
+      issue (the committed precomputed analysis is stale against the frozen dataset)
+- [x] Screenshots captured for the README; the poster still needs them
 
 ---
 

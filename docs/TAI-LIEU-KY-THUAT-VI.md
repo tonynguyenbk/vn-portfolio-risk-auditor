@@ -216,17 +216,22 @@ tác trực tiếp với nó.
 
 ## Triển khai (deployment)
 
-Cả hai nửa của hệ thống đều được deploy lên Vercel từ cùng một repository:
-site Next.js dưới dạng static output, và FastAPI dưới dạng một Python
-serverless function trong thư mục `api/`. Cùng một origin, nên không cần CORS
-ở môi trường production; `NEXT_PUBLIC_API_URL` tồn tại cho trường hợp backend
-nằm ở nơi khác.
+Cả hai nửa của hệ thống đều được deploy lên Vercel từ cùng một repository,
+dưới dạng hai service độc lập khai báo trong `vercel.json`: site Next.js có
+root là `frontend/`, và FastAPI có root là `backend/` với entrypoint là
+`app.main:app`. Cùng một origin, được định tuyến bằng một rewrite ở cấp cao
+nhất (`/api/*` trỏ về backend, phần còn lại trỏ về frontend) — nên không cần
+CORS ở môi trường production, và `NEXT_PUBLIC_API_URL` vẫn để trống trừ khi
+backend chuyển sang một origin khác.
 
-Nếu bundle serverless không bao giờ vừa kích thước cho phép, phương án dự
-phòng là Hugging Face Spaces cho backend, với `NEXT_PUBLIC_API_URL` trỏ về
-đó. Vì phần demo đã được tính sẵn, việc chuyển đổi này chỉ ảnh hưởng đến tính
-năng upload — bản thân trang web vẫn hoạt động bình thường trong suốt quá
-trình.
+Đang chạy tại https://vnportfolioriskauditor.vercel.app; xem mục "4. Triển
+khai" bên dưới để biết chi tiết quá trình đó, bao gồm việc kế hoạch ban đầu
+(một function Python duy nhất tại `api/index.py`) đã không trụ được khi
+triển khai thật và phải được thay thế.
+
+Phương án dự phòng Hugging Face Spaces vẫn được giữ lại cho trường hợp bundle
+serverless về sau không còn vừa kích thước cho phép — dự án hiện chưa cần đến
+phương án này.
 
 ---
 
@@ -869,13 +874,15 @@ cách đó rất lớn.
 
 *(Bản dịch của `deployment.md`)*
 
-> **Trạng thái: đã viết, chưa được kiểm chứng.** Chưa có gì được deploy thực
-> sự. Cấu hình trong `vercel.json`, `api/index.py` và `requirements.txt` là
-> một điểm khởi đầu đã được cân nhắc kỹ, chứ không phải một cấu hình đã được
-> chứng minh hoạt động — một monorepo với một Python function nằm cạnh một
-> ứng dụng Next.js trong một thư mục con chính là kiểu bố trí thường cần một
-> hoặc hai điều chỉnh khi chạy thử lần đầu. Tài liệu này ghi lại những gì cần
-> mong đợi và cần làm gì nếu nó không chạy đúng ngay từ lần đầu.
+> **Trạng thái: đã kiểm chứng.** Đã deploy ngày 8/8/2026 lên
+> **https://vnportfolioriskauditor.vercel.app**. Kế hoạch mà tài liệu này mô
+> tả ban đầu — một Python function duy nhất dưới `api/` — đã không trụ được
+> khi chạy thật: nó thất bại với đúng lỗi "Next.js not detected" đã được dự
+> đoán bên dưới. Cái thực sự chạy được dùng tính năng Vercel Services, vốn
+> không nằm trong kế hoạch ban đầu. Các bước dưới đây mô tả những gì thực sự
+> hoạt động; cách tiếp cận bị bỏ vẫn được giữ lại như một kiểu lỗi đã ghi
+> nhận, thay vì xóa đi — vì giờ nó là điều đã xảy ra thật, không còn là dự
+> đoán.
 
 Mọi thứ dùng ở đây đều miễn phí. Tổng chi phí vận hành: bằng không.
 
@@ -915,62 +922,84 @@ git push -u origin main
 
 Xác nhận workflow CI chạy và pass trước khi tiếp tục.
 
-### 2. Deploy trang web
+### 2. Deploy bằng Vercel Services
 
-Import repository tại [vercel.com/new](https://vercel.com/new).
+`vercel.json` ở gốc repository đã khai báo sẵn hai service độc lập — không
+cần chỉnh Root Directory thủ công:
 
-Gói Hobby là miễn phí và yêu cầu sử dụng phi thương mại, điều mà một dự án
-portfolio phục vụ mục đích học tập đáp ứng được.
+```json
+{
+  "services": {
+    "frontend": { "root": "frontend", "framework": "nextjs" },
+    "backend": { "root": "backend", "framework": "fastapi", "entrypoint": "app.main:app" }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": { "service": "backend" } },
+    { "source": "/(.*)", "destination": { "service": "frontend" } }
+  ]
+}
+```
 
-Nếu Vercel không tự nhận diện cấu hình, hãy đặt:
-
-| Cài đặt | Giá trị |
-|---|---|
-| Framework preset | Next.js |
-| Root directory | `frontend` |
-| Build command | *(mặc định)* |
-
-Đặt root directory là `frontend` là cách bố trí đơn giản nhất và đáng thử
-trước tiên. **Cách này sẽ vô hiệu hóa Python function**, vì `api/` khi đó
-nằm ngoài phạm vi build — điều này không sao cả, và chính là cách tách được
-mô tả ở bước 4.
+Import repository tại [vercel.com/new](https://vercel.com/new), hoặc deploy
+từ CLI bằng `vercel --prod`. Gói Hobby là miễn phí và yêu cầu sử dụng phi
+thương mại, điều mà một dự án portfolio phục vụ mục đích học tập đáp ứng
+được. Vercel build từng service độc lập và định tuyến `/api/*` về backend,
+phần còn lại về frontend, trên cùng một domain — nên không cần CORS ở môi
+trường production và không cần quản lý một host riêng.
 
 Xác minh: cả bốn route đều load được, các thẻ chỉ số hiển thị số liệu, bảng
-Model Audit có dữ liệu, và các kịch bản stress test xuất hiện. Không điều nào
-trong số đó cần đến API.
-
-### 3. Thử Python function
-
-Chỉ làm bước này nếu bạn muốn tính năng upload chạy cùng một origin với site.
-
-Đặt lại root directory về gốc repository để `vercel.json` điều khiển quá
-trình build. Hãy chuẩn bị tinh thần thử-sai nhiều lần ở bước này.
-
-**Những thứ có khả năng gặp lỗi**
-
-| Triệu chứng | Nguyên nhân khả dĩ |
-|---|---|
-| Next.js không được nhận diện | Root directory hoặc `outputDirectory` sai cho cấu trúc monorepo |
-| `ModuleNotFoundError: app` | Việc chèn `sys.path` trong `api/index.py` không phân giải đúng trên hệ thống file của runtime |
-| Function vượt quá giới hạn kích thước | Khó xảy ra — đã đo được 79 MB so với giới hạn 250 MB — nhưng wheel Linux khác với số đo trên Windows |
-| Lỗi 404 tại `/api/v1/health` | Rewrite không khớp; kiểm tra mục `rewrites` trong `vercel.json` |
-| Timeout ở request đầu tiên | Cold start. `maxDuration` đã được đặt là 60 giây |
-
-Xác minh bằng:
+Model Audit có dữ liệu, các kịch bản stress test xuất hiện, và:
 
 ```bash
 curl https://<your-deployment>/api/v1/health
 # {"status":"ok","version":"0.1.0"}
 ```
 
-### 4. Phương án dự phòng: tách việc deploy ra làm hai
+### Kế hoạch ban đầu đã sai ở đâu
 
-Nếu cách bố trí cùng một origin gặp trở ngại, hãy chuyển sang phương án tách
-riêng. Đây không phải là một thất bại — có thể coi đây là cách bố trí bền
-vững hơn, và đây cũng chính là kế hoạch dự phòng đã được tính đến ngay từ
-đầu.
+Kế hoạch mà tài liệu này mô tả ban đầu — một Python function duy nhất tại
+`api/index.py`, điều khiển bởi khóa `functions` ở cấp cao nhất trong
+`vercel.json` cùng việc chỉnh Root Directory thủ công — được viết trước khi
+deploy thật, và nó thất bại ngay lần đầu chạy thử: cơ chế nhận diện Next.js
+của Vercel chạy dựa trên gốc repository bất kể `buildCommand` tùy chỉnh, và
+vì không có `package.json` ở đó, nó báo "No Next.js version detected" thay
+vì build bất cứ thứ gì.
 
-- **Site** trên Vercel, root directory là `frontend`.
+Services giải quyết việc này bằng cách cho mỗi nửa ứng dụng một root riêng,
+được build độc lập, thay vì ép một cài đặt Root Directory duy nhất phải bao
+quát cả ứng dụng Next.js trong `frontend/` lẫn Python function ở nơi khác.
+`api/index.py` — lớp chuyển đổi dùng `sys.path` để cho phép cách cũ import
+`backend/app` từ trong `api/` — không còn cần thiết và đã bị xóa; service
+backend giờ import trực tiếp `app.main:app`, với root là `backend/`.
+
+**Những thứ có khả năng vẫn gặp lỗi**
+
+| Triệu chứng | Nguyên nhân khả dĩ |
+|---|---|
+| Next.js không được nhận diện | Quay lại dùng `vercel.json` kiểu `functions` cũ mà không đặt root cho từng service |
+| `ModuleNotFoundError: app` | `root` của service backend không phải `backend/`, hoặc `entrypoint` không phải `app.main:app` |
+| Function vượt quá giới hạn kích thước | Khó xảy ra — đã đo được 79 MB so với giới hạn 250 MB — nhưng xem mục còn tồn đọng bên dưới |
+| Lỗi 404 tại `/api/v1/health` | Rewrite không khớp; kiểm tra mục `rewrites` trong `vercel.json` |
+| Timeout ở request đầu tiên | Cold start |
+
+**Vấn đề còn tồn đọng, chưa xử lý.** Service backend đang deploy thực tế cài
+đặt dependency từ `backend/pyproject.toml` / `uv.lock` — tức là toàn bộ tập
+dependency dùng cho phát triển, bao gồm cả SciPy — thay vì file
+`backend/requirements.txt` đã được rút gọn như README mô tả trong phần lý do
+về dung lượng (79 MB so với 96 MB của riêng SciPy). Việc deploy vẫn chạy
+được và vẫn nằm dưới giới hạn 250 MB dù theo cách nào, nên điều này chưa gây
+ra lỗi gì, nhưng có nghĩa là thiết kế cố ý "không có SciPy lúc runtime" thực
+ra chưa thực sự có hiệu lực trên Vercel. Đáng để xử lý sau: hoặc là làm cho
+Python builder của Services ưu tiên đọc `requirements.txt`, hoặc cập nhật lại
+mô tả về dependency trong README cho khớp với những gì đang thực sự chạy.
+
+### 3. Phương án dự phòng: tách việc deploy ra làm hai
+
+Hiện chưa cần đến, nhưng đáng giữ lại phòng khi bundle serverless về sau
+không còn vừa kích thước cho phép — chẳng hạn một lần nâng cấp dependency
+kéo theo thứ gì đó nặng hơn.
+
+- **Site** trên Vercel, giữ nguyên.
 - **API** trên [Hugging Face Spaces](https://huggingface.co/spaces) (miễn
   phí, dùng Docker, không giới hạn kích thước bundle) hoặc bất kỳ host nào
   chạy được tiến trình Python.
@@ -991,6 +1020,9 @@ chưa bao giờ phụ thuộc vào API.
 | `ALLOWED_ORIGINS` | Host của backend | Danh sách cho phép CORS, phân tách bằng dấu phẩy. Chỉ cần khi tách riêng. |
 | `MAX_UPLOAD_BYTES` | Host của backend | Giới hạn dung lượng upload. Mặc định 8 MB. |
 
+Hiện đang để trống trong project Vercel — đã xác nhận bằng `vercel env ls`,
+kết quả trả về không có biến nào. Việc deploy là cùng một origin.
+
 Không có secret nào. Ứng dụng không có database, không có xác thực và không
 có thông tin đăng nhập bên thứ ba nào, nên không có gì để bị lộ.
 
@@ -998,16 +1030,17 @@ có thông tin đăng nhập bên thứ ba nào, nên không có gì để bị 
 
 ## Sau khi deploy
 
-- [ ] Cả bốn route đều load được, có số liệu, trong một cửa sổ ẩn danh
-      (incognito)
+- [x] Cả bốn route đều load được, có số liệu (đã xác minh qua ảnh chụp màn
+      hình, chưa thử riêng trong cửa sổ ẩn danh)
 - [ ] Giao diện di động hoạt động trên điện thoại thật, không chỉ là trình
       duyệt được resize
 - [ ] Trang Report in ra không bị cắt nội dung
-- [ ] `/api/v1/health` phản hồi, hoặc phương án tách riêng đã sẵn sàng và
-      upload hoạt động
+- [x] `/api/v1/health` phản hồi
 - [ ] Upload các file CSV mẫu từ `frontend/public/demo/` từ đầu đến cuối
-- [ ] Badge CI hiển thị xanh trên README
-- [ ] Đã chụp ảnh màn hình cho README và poster
+- [ ] Badge CI hiển thị xanh trên README — hiện đang fail vì một vấn đề có
+      sẵn, không liên quan (bản phân tích tính sẵn đã committed bị lệch so
+      với dữ liệu đóng băng)
+- [x] Đã chụp ảnh màn hình cho README; poster vẫn còn thiếu
 
 ---
 

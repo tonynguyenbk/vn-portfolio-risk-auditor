@@ -180,7 +180,7 @@ Dự án được chia thành 7 giai đoạn (phase), triển khai tuần tự:
 | 4 | Backtest walk-forward và kiểm định Kupiec | Hoàn thành |
 | 5 | Kiểm tra sức chịu đựng (kịch bản lịch sử + cú sốc tùy chỉnh) | Hoàn thành |
 | 6 | Trang báo cáo và xuất file CSV | Hoàn thành |
-| 7 | Báo cáo nghiên cứu, tài liệu, cấu hình triển khai | Tài liệu xong; **chưa triển khai thực tế** |
+| 7 | Báo cáo nghiên cứu, tài liệu, cấu hình triển khai | **Đã deploy**; báo cáo và video còn thiếu |
 
 Quy trình làm việc trong mỗi giai đoạn tuân theo trình tự: xác định hợp đồng
 dữ liệu (API contract) trước → hiện thực logic tính toán trong tầng
@@ -331,17 +331,19 @@ frontend, `uvicorn` cho backend), với trang demo tải dữ liệu tính sẵn
 cần chờ backend) và nút "Run analysis" cho phép người dùng yêu cầu engine
 Python tính lại trực tiếp để đối chiếu.
 
-**Trạng thái triển khai thực tế**: **chưa được deploy công khai**. Cấu hình
-để triển khai lên Vercel (site Next.js tĩnh + Python serverless function) đã
-được viết sẵn (`vercel.json`, `api/index.py`, `requirements.txt`) và tài liệu
-hóa chi tiết từng bước cùng phương án dự phòng (tách backend sang Hugging
-Face Spaces nếu cần), nhưng chưa được xác minh trên môi trường thực. Đây là
-rủi ro/thiếu sót lớn nhất còn tồn đọng của dự án ở thời điểm hiện tại.
+**Trạng thái triển khai thực tế**: **đã deploy công khai**, tại
+https://vnportfolioriskauditor.vercel.app (deploy ngày 8/8/2026). Cả frontend
+(Next.js) lẫn backend (FastAPI) đều chạy trên Vercel, dưới dạng hai service
+độc lập (tính năng Vercel Services) trong cùng một project — khác với kế
+hoạch ban đầu là một Python serverless function duy nhất dưới `api/`, vốn đã
+thất bại thật khi triển khai (lỗi "No Next.js version detected") đúng như tài
+liệu deployment.md đã cảnh báo trước. Chi tiết những gì đã thay đổi so với kế
+hoạch gốc được ghi lại trong `docs/deployment.md`.
 
 Kiến trúc được thiết kế sao cho rủi ro triển khai được giảm thiểu tối đa:
 phần quan trọng nhất (trang demo) là hoàn toàn tĩnh và không phụ thuộc vào
 backend còn sống hay không; chỉ tính năng tải file CSV của người dùng mới cần
-đến API đang chạy.
+đến API đang chạy. Thực tế triển khai đã xác nhận đúng thiết kế này.
 
 ---
 
@@ -361,8 +363,8 @@ backend còn sống hay không; chỉ tính năng tải file CSV của người 
    độ vị thế thay vì phép tính tuyến tính đơn giản hiện tại.
 6. **Rủi ro đa kỳ hạn** (multi-day horizon) với phương pháp quy đổi có cơ sở,
    thay vì chỉ dừng ở dự báo một ngày.
-7. **Hoàn tất triển khai công khai** lên Vercel/GitHub, chụp ảnh màn hình,
-   quay video demo, và hoàn thiện báo cáo nghiên cứu 8–12 trang.
+7. **Quay video demo** và hoàn thiện báo cáo nghiên cứu 8–12 trang (ảnh chụp
+   màn hình đã có).
 8. Về lâu dài: quản trị mô hình (versioning, phê duyệt, tái kiểm định định
    kỳ), nhật ký kiểm toán, và kiểm định độc lập bởi người không tham gia xây
    dựng — những yêu cầu cần thiết nếu công cụ tiến gần hơn tới một hệ thống

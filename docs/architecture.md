@@ -184,12 +184,18 @@ the precompute script, or by a notebook, and the tests exercise it directly.
 
 ## Deployment
 
-Both halves deploy to Vercel from one repository: the Next.js site as static
-output, and FastAPI as a Python serverless function under `api/`. Same origin, so
-no CORS in production; `NEXT_PUBLIC_API_URL` exists for the case where the
-backend lives elsewhere.
+Both halves deploy to Vercel from one repository, as two independent services
+declared in `vercel.json`: the Next.js site rooted at `frontend/`, and FastAPI
+rooted at `backend/` with `app.main:app` as its entrypoint. Same origin,
+routed by a top-level rewrite (`/api/*` to the backend, everything else to the
+frontend) — so no CORS in production, and `NEXT_PUBLIC_API_URL` stays unset
+unless the backend ever moves to a separate origin.
 
-If the serverless bundle ever fails to fit, the fallback is Hugging Face Spaces
-for the backend with `NEXT_PUBLIC_API_URL` pointed at it. Because the
-demonstration is precomputed, that migration affects the upload feature only —
-the site itself would keep working throughout.
+Live at https://vnportfolioriskauditor.vercel.app; see
+[deployment.md](deployment.md) for what that took, including where the
+original single-function plan (`api/index.py`) didn't survive contact and had
+to be replaced.
+
+The Hugging Face Spaces fallback described in `deployment.md` remains in
+reserve for if the serverless bundle ever stops fitting — not something this
+project has needed.

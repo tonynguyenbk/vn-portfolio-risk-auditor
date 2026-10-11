@@ -5,6 +5,8 @@ how much risk it carries, where that risk comes from, how it responds to adverse
 scenarios, and — the part most tools skip — whether the risk model itself can be
 trusted on the data it was tested against.
 
+**Live:** https://vnportfolioriskauditor.vercel.app
+
 > **Educational prototype • Simulated data.** Every figure currently shown is computed
 > from a deterministic generated series, not from observed market data. This project
 > does not provide investment advice, predict market direction, or execute trades.
@@ -33,9 +35,9 @@ scenario would do to the portfolio.
 
 ## Current status
 
-All seven phases are implemented. The code is complete against the
-specification; what remains is not code but the written report, screenshots and
-the deployment itself.
+All seven phases are implemented, and the site is deployed. The code is
+complete against the specification; what remains is authorship, not
+engineering.
 
 | Phase | Scope | Status |
 |---|---|---|
@@ -45,15 +47,18 @@ the deployment itself.
 | 4 | Walk-forward backtesting and the Kupiec test | **Done** |
 | 5 | Stress testing, including historical scenarios | **Done** |
 | 6 | Reporting and CSV export | **Done** |
-| 7 | Research report, documentation, deployment | **Documentation done; not yet deployed** |
+| 7 | Research report, documentation, deployment | **Deployed; report and video outstanding** |
+
+The site is live at **https://vnportfolioriskauditor.vercel.app**. Verify it
+yourself: open the site, call `/api/v1/health`, or press **Run analysis** and
+check the returned numbers against what's already on screen — see the
+[deployment guide](docs/deployment.md) for what was verified and what changed
+from the original plan.
 
 Still outstanding, and all of it is authoring rather than engineering:
 
-- **Nothing is deployed and the repository is local only.** This is the gap that
-  matters most — a working site is the primary deliverable, and the deployment
-  configuration in this repository is written but unverified.
 - The 8–12 page research paper, for which [an outline](docs/research-report-outline.md) exists.
-- Screenshots, the poster, and the demonstration video (there is [a script](docs/demo-script.md)).
+- The poster and the demonstration video (there is [a script](docs/demo-script.md)).
 - The author's reflection.
 
 Every figure on screen is now produced by the Python engine; the throwaway
