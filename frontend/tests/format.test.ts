@@ -4,6 +4,9 @@ import {
   formatPValue,
   formatPercent,
   formatSignedPercent,
+  formatVnd,
+  formatVndInput,
+  parseVndInput,
 } from "@/lib/format";
 
 describe("formatPercent", () => {
@@ -41,5 +44,15 @@ describe("formatPValue", () => {
 describe("formatDate", () => {
   it("renders an ISO date in a human-readable form", () => {
     expect(formatDate("2025-12-31")).toBe("31 Dec 2025");
+  });
+});
+
+describe("VND formatting", () => {
+  it("groups whole đồng the Vietnamese way and reads it back", () => {
+    expect(formatVnd(500_000_000)).toBe("500.000.000 ₫");
+    expect(formatVnd(null)).toBe("—");
+    expect(formatVndInput(10_000_000)).toBe("10.000.000");
+    expect(parseVndInput("10.000.000")).toBe(10_000_000);
+    expect(parseVndInput("")).toBe(0);
   });
 });

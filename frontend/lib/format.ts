@@ -67,3 +67,22 @@ export function formatDateRange(start: string, end: string): string {
 export function formatConfidence(value: number): string {
   return `${(value * 100).toFixed(0)}%`;
 }
+
+const VND = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 });
+
+/** Whole đồng with Vietnamese digit grouping. 500000000 -> "500.000.000 ₫" */
+export function formatVnd(value: number | null): string {
+  if (value === null || !Number.isFinite(value)) return "—";
+  return `${VND.format(Math.round(value))} ₫`;
+}
+
+/** Grouped digits only, for an editable VND field. 500000000 -> "500.000.000" */
+export function formatVndInput(value: number): string {
+  return Number.isFinite(value) ? VND.format(Math.round(value)) : "";
+}
+
+/** Read a VND field back, ignoring grouping and any non-digit characters. */
+export function parseVndInput(text: string): number {
+  const digits = text.replace(/\D/g, "");
+  return digits === "" ? 0 : Number(digits);
+}

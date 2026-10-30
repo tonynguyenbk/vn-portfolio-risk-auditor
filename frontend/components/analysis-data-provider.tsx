@@ -31,6 +31,11 @@ interface AnalysisDataContextValue {
   backtestResult: BacktestResult;
   scenarios: HistoricalScenario[];
   source: DataSource;
+  /**
+   * The market file behind an uploaded analysis, kept so pages that compute in
+   * the browser (What-if) can read the same prices. Null for the demo.
+   */
+  marketFile: File | null;
   uploadState: UploadState;
   /** Structured failure from the last upload attempt, if any. */
   error: ApiError | null;
@@ -52,6 +57,7 @@ export function AnalysisDataProvider({ children }: { children: React.ReactNode }
   const [backtestResult, setBacktestResult] = useState<BacktestResult>(demoBacktest);
   const [scenarios, setScenarios] = useState<HistoricalScenario[]>(demoStress.scenarios);
   const [source, setSource] = useState<DataSource>("demo");
+  const [marketFile, setMarketFile] = useState<File | null>(null);
   const [uploadState, setUploadState] = useState<UploadState>("idle");
   const [error, setError] = useState<ApiError | null>(null);
 
@@ -73,6 +79,7 @@ export function AnalysisDataProvider({ children }: { children: React.ReactNode }
         const result = await analyse(marketFile, portfolioFile, params, limits);
         setAnalysis(result);
         setSource("upload");
+        setMarketFile(marketFile);
 
         const backtested = await backtest(marketFile, portfolioFile, params, limits);
         setBacktestResult(backtested);
@@ -135,6 +142,7 @@ export function AnalysisDataProvider({ children }: { children: React.ReactNode }
 
         setScenarios(demoStress.scenarios);
         setSource("demo");
+        setMarketFile(null);
         setUploadState("complete");
       } catch (caught) {
         setError(
@@ -153,6 +161,7 @@ export function AnalysisDataProvider({ children }: { children: React.ReactNode }
     setBacktestResult(demoBacktest);
     setScenarios(demoStress.scenarios);
     setSource("demo");
+    setMarketFile(null);
     setUploadState("idle");
     setError(null);
   }, []);
@@ -163,6 +172,7 @@ export function AnalysisDataProvider({ children }: { children: React.ReactNode }
       backtestResult,
       scenarios,
       source,
+      marketFile,
       uploadState,
       error,
       runUpload,
@@ -174,6 +184,7 @@ export function AnalysisDataProvider({ children }: { children: React.ReactNode }
       backtestResult,
       scenarios,
       source,
+      marketFile,
       uploadState,
       error,
       runUpload,
