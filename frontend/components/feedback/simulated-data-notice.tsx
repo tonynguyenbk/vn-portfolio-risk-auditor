@@ -2,21 +2,26 @@
 
 import { FlaskConical, Upload } from "lucide-react";
 import { useAnalysisData } from "@/components/analysis-data-provider";
+import { DEMO_DATA_DESCRIPTION } from "@/lib/demo-data";
 import { cn } from "@/lib/utils";
 
 /**
- * The label PRD 0.8 requires while the app runs on generated data.
+ * The data-provenance label PRD 0.8 requires above every page of figures.
  *
- * Driven by `metadata.isSimulated` from the payload rather than hard-coded,
- * because the claim has to track the data. Leaving "Simulated data" on screen
- * over a user's real portfolio would be as much a misstatement as omitting it
- * from the demo — the point of the label is that it is accurate, not that it
- * is present.
+ * The bundled demonstration is real historical market data, so it is labelled
+ * as such — with its source and period, and with the not-investment-advice
+ * disclaimer. Uploaded data gets a different label.
+ *
+ * Driven by which dataset is on screen rather than hard-coded, because the
+ * claim has to track the data: describing a user's own upload as the bundled
+ * Vietcap series would be as much a misstatement as omitting the label from the
+ * demo. (The component keeps its historical name, from when the bundled data
+ * was synthetic, to avoid churning every page that imports it.)
  */
 export function SimulatedDataNotice({ className }: { className?: string }) {
-  const { analysis } = useAnalysisData();
+  const { source } = useAnalysisData();
 
-  if (!analysis.metadata.isSimulated) {
+  if (source === "upload") {
     return (
       <div
         className={cn(
@@ -44,10 +49,8 @@ export function SimulatedDataNotice({ className }: { className?: string }) {
     >
       <FlaskConical aria-hidden="true" className="h-4 w-4 shrink-0 text-amber" />
       <p className="text-[12px] leading-snug text-ink-secondary">
-        <span className="font-[650] text-amber">Educational prototype • Simulated data</span>
-        {" — "}
-        every figure below is computed from a deterministic generated series, not
-        from observed Vietnamese market data.
+        <span className="font-[650] text-amber">{DEMO_DATA_DESCRIPTION}.</span>{" "}
+        Educational prototype — not investment advice.
       </p>
     </div>
   );

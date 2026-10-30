@@ -1,4 +1,6 @@
+import { useAnalysisData } from "@/components/analysis-data-provider";
 import { Panel, PanelBody, PanelHeader, PanelTitle } from "@/components/ui/panel";
+import { DEMO_DATA_DESCRIPTION } from "@/lib/demo-data";
 import { formatDateRange, formatNumber } from "@/lib/format";
 import type { AnalysisMetadata, Assumptions } from "@/types/analysis";
 
@@ -14,7 +16,11 @@ export function AssumptionsFooter({
   assumptions: Assumptions;
   metadata: AnalysisMetadata;
 }) {
+  const { source } = useAnalysisData();
+  const isBundled = source === "demo";
+
   const rows: { label: string; value: string }[] = [
+    { label: "Data", value: isBundled ? DEMO_DATA_DESCRIPTION : "Uploaded files" },
     { label: "Analysis period", value: formatDateRange(metadata.startDate, metadata.endDate) },
     { label: "Return definition", value: "Logarithmic daily returns" },
     { label: "Rolling window", value: `${assumptions.rollingWindow} trading observations` },
@@ -22,7 +28,15 @@ export function AssumptionsFooter({
     { label: "Annualisation", value: `√${assumptions.tradingDaysPerYear} convention` },
     { label: "Quantile method", value: assumptions.quantileMethod },
     { label: "EWMA decay (λ)", value: formatNumber(assumptions.ewmaLambda, 2) },
-    { label: "Price basis", value: assumptions.priceBasis === "close" ? "Closing price" : "Adjusted close" },
+    {
+      label: "Price basis",
+      value:
+        assumptions.priceBasis === "adjusted_close"
+          ? "Adjusted close"
+          : isBundled
+            ? "Adjusted close, as supplied by Vietcap"
+            : "Closing price",
+    },
     {
       label: "Weighting",
       value: assumptions.weightsFixed

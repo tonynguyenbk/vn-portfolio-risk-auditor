@@ -44,7 +44,7 @@ export const MODEL_LABELS: Record<VarModel, string> = {
 
 export interface AnalysisMetadata {
   datasetName: string;
-  /** Drives the "Simulated data" labelling required by PRD 0.8. */
+  /** True only for generated (synthetic) data. The bundled demo is real data, so false. */
   isSimulated: boolean;
   startDate: string;
   endDate: string;

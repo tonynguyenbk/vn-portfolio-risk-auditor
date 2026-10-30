@@ -73,7 +73,7 @@ export function AppHeader() {
           </Badge>
           <InfoTooltip
             label="this prototype"
-            content="An educational research prototype. It measures and validates portfolio risk on simulated data. It does not give investment advice, predict prices, or place trades."
+            content="An educational research prototype. It measures and validates portfolio risk on real historical data (adjusted closes, source: Vietcap), 2015-01 → 2026-10. It does not give investment advice, predict prices, or place trades."
           />
         </div>
       </div>

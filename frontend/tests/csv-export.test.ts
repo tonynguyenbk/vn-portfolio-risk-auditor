@@ -23,8 +23,8 @@ function parse(csv: string): string[][] {
 describe("metrics export", () => {
   const csv = metricsCsv(demoAnalysis);
 
-  it("records the dataset and its simulated status in the header", () => {
-    expect(csv).toContain("# Simulated data,true");
+  it("records the dataset and that it is not simulated in the header", () => {
+    expect(csv).toContain("# Simulated data,false");
     expect(csv).toContain(demoAnalysis.metadata.datasetName);
   });
 

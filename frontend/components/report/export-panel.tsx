@@ -21,10 +21,10 @@ import {
  * cannot disagree.
  */
 export function ExportPanel() {
-  const { analysis, backtestResult, scenarios } = useAnalysisData();
+  const { analysis, backtestResult, scenarios, source } = useAnalysisData();
 
   const stamp = analysis.metadata.endDate;
-  const prefix = analysis.metadata.isSimulated ? "vn-risk-demo" : "vn-risk-audit";
+  const prefix = source === "demo" ? "vn-risk-demo" : "vn-risk-audit";
 
   const exports = [
     {

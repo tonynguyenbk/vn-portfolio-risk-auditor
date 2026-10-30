@@ -163,8 +163,10 @@ export default function ReportPage() {
         <PanelBody>
           <ul className="flex list-disc flex-col gap-2 pl-5 text-[12px] leading-relaxed text-ink-secondary">
             <li>
-              All figures derive from a deterministic simulated series, not from observed
-              Vietnamese market data. They demonstrate the method, not the market.
+              The bundled figures use real historical data (adjusted closes, source:
+              Vietcap), 2015-01 → 2026-10, for five large caps that survived the whole
+              period. They describe this portfolio, not the market, and are not
+              investment advice.
             </li>
             <li>
               Weights are held fixed throughout. No rebalancing, transaction costs, taxes

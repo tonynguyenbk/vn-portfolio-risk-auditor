@@ -46,7 +46,7 @@ export function DatasetPicker() {
               if (next === "demo") resetToDemo();
             }}
           >
-            <option value="demo">Bundled demo (simulated)</option>
+            <option value="demo">Bundled demo (real data, Vietcap)</option>
             <option value="upload">Upload CSV</option>
           </Select>
         )}

@@ -3,6 +3,7 @@ import { screen, within } from "@testing-library/react";
 import { renderWithProviders as render } from "./test-utils";
 import OverviewPage from "@/app/page";
 import ReportPage from "@/app/report/page";
+import { DEMO_DATA_NOTICE } from "@/lib/demo-data";
 
 describe("Overview dashboard", () => {
   it("shows the four primary metric cards in the first viewport", () => {
@@ -14,11 +15,13 @@ describe("Overview dashboard", () => {
     expect(screen.getByText("Maximum drawdown")).toBeInTheDocument();
   });
 
-  it("labels every figure as simulated data (PRD 0.8)", () => {
+  it("labels the bundled figures as real data with source, period and disclaimer (PRD 0.8)", () => {
     render(<OverviewPage />);
-    expect(
-      screen.getByText(/Educational prototype • Simulated data/),
-    ).toBeInTheDocument();
+    const label = screen.getByText(
+      /^Real historical data \(adjusted closes, source: Vietcap\), 2015-01 → 2026-10\./,
+    );
+    expect(label.closest("p")).toHaveTextContent(DEMO_DATA_NOTICE);
+    expect(label.closest("p")).toHaveTextContent(/not investment advice/);
   });
 
   it("renders metric values as percentages rather than raw decimals", () => {

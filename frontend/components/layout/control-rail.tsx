@@ -62,7 +62,7 @@ export function ControlRail() {
         <Section title="Portfolio">
           <Field
             label="Preset"
-            hint="Five fictional tickers with fixed long-only weights summing to 100%."
+            hint="FPT, VCB, HPG, MWG, VNM with fixed long-only weights summing to 100%. Real historical data (adjusted closes, source: Vietcap), 2015-01 → 2026-10. Educational prototype — not investment advice."
           >
             {(id) => (
               <Select id={id} defaultValue="demo5">
