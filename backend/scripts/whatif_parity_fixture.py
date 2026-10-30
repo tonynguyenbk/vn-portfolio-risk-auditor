@@ -84,7 +84,8 @@ def build_market_csv(seed: int = SEED) -> str:
 
     market = rng.standard_t(4, TRADING_DAYS) * 0.009
     betas = np.array([0.8, 1.1, 1.3, 0.6])
-    idio = rng.standard_t(5, (TRADING_DAYS, len(TICKERS))) * np.array([0.008, 0.012, 0.015, 0.01])
+    idio_scale = np.array([0.008, 0.012, 0.015, 0.01])
+    idio = rng.standard_t(5, (TRADING_DAYS, len(TICKERS))) * idio_scale
     asset_r = market[:, None] * betas + idio
     starts = np.array([50.0, 120.0, 25.0, 80.0])
     prices = starts * np.exp(np.cumsum(asset_r, axis=0))
