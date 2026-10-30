@@ -240,6 +240,32 @@ Full details in the PRD section 26. At minimum:
 
 ---
 
+## Appendix A. Experiment: do exit rules beat holding less equity?
+
+Full write-up: [experiments/exit-rules.md](experiments/exit-rules.md). Code,
+committed data and generated tables are in `research/exit_rules/`.
+
+This is a self-contained study on real VN30 data, and it can go in as an
+appendix or a short section after §6. It tests five exit rules (fixed stop from
+cost, trailing stop, EWMA volatility targeting, VaR-breach exit, drawdown
+control) against buy-and-hold and against a static mix holding the same average
+equity exposure. The finding to carry into the report: the rules cut drawdowns
+mostly by holding less equity, and none reliably beat the equal-exposure static
+mix across 30 stocks and 200 bootstrap paths, even though volatility targeting
+did clearly beat it on the synthetic generator.
+
+The section supports the report's main argument in two ways worth stating:
+
+- **Validation versus one good backtest.** A VaR-breach rule fitted on
+  2013–2018 looked excellent out-of-sample on the VN30 index, and then failed
+  in the cross-section and the bootstrap. This is the calculation-versus-validation
+  point of §5.3, applied to a trading rule instead of a risk model.
+- **Synthetic data shows the method, not the market.** The generator's
+  engineered volatility regimes produced a result that real data did not
+  reproduce. This is a concrete instance of the first limitation in §7.
+
+---
+
 ## Writing notes
 
 **Precision over enthusiasm.** "The EWMA model was not rejected at either
