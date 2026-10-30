@@ -1,0 +1,9 @@
+# Research code follows the backend's lint rules. It lives outside backend/ so
+# the deployed API bundle never includes it or its committed datasets.
+#
+#   uv run --directory backend ruff check ../research
+extend = "../backend/pyproject.toml"
+
+[lint.isort]
+# Sibling modules imported by scripts run from their own directory.
+known-first-party = ["exitlab"]

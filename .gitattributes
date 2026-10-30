@@ -23,3 +23,5 @@ uv.lock linguist-generated=true -diff
 
 # The frozen demonstration dataset is data, not source.
 frontend/public/demo/*.csv linguist-generated=true -diff
+# Committed research datasets: pinned by the SHA-256 in their manifest.
+research/**/*.csv linguist-generated=true -diff

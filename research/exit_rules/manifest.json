@@ -1,0 +1,51 @@
+{
+  "source": "Vietcap chart endpoint (undocumented, public)",
+  "url": "https://trading.vietcap.com.vn/api/chart/OHLCChart/gap-chart",
+  "request": {
+    "timeFrame": "ONE_DAY",
+    "to": 1793318400,
+    "toIso": "2026-10-30T00:00:00+00:00",
+    "countBack": 5000
+  },
+  "priceBasis": "vendor-adjusted close; indices are price indices",
+  "retrievedOn": "2026-10-30",
+  "use": "personal non-commercial research",
+  "rows": 110380,
+  "rowsPerSymbol": {
+    "VN30": 3676,
+    "VNINDEX": 5000,
+    "ACB": 4967,
+    "BCM": 2164,
+    "BID": 3182,
+    "BVH": 4331,
+    "CTG": 4316,
+    "FPT": 4953,
+    "GAS": 3607,
+    "GVR": 2145,
+    "HDB": 2199,
+    "HPG": 4724,
+    "LPB": 2254,
+    "MBB": 3742,
+    "MSN": 4237,
+    "MWG": 3072,
+    "PLX": 2380,
+    "SAB": 2471,
+    "SHB": 4374,
+    "SSB": 1398,
+    "SSI": 4941,
+    "STB": 5000,
+    "TCB": 2101,
+    "TPB": 2130,
+    "VCB": 4328,
+    "VHM": 3525,
+    "VIB": 2441,
+    "VIC": 4765,
+    "VJC": 2417,
+    "VNM": 5000,
+    "VPB": 2298,
+    "VRE": 2242
+  },
+  "files": {
+    "data.csv": "093be3634f48a2a2fedf791a382178261a6526976257ea316881cdc7d41470e1"
+  }
+}
