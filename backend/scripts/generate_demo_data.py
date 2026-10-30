@@ -1,18 +1,16 @@
-"""Generate the deterministic demonstration dataset (PRD 8.6).
+"""Generate a deterministic synthetic price dataset.
 
-Run from the repository root::
+This used to produce the shipped demonstration dataset. That is now real market
+data, fetched by ``scripts/fetch_market_data.py``. The generator is kept as a
+synthetic fixture: the test suite uses ``generate_market_data`` for a series
+whose properties (seeded, gap-free, two volatility regimes) are known by
+construction, independent of whatever the shipped files contain.
 
-    uv run --directory backend python scripts/generate_demo_data.py
+It no longer writes anywhere by default. To produce files, name a directory::
 
-Writes three files into ``frontend/public/demo/``:
+    uv run --directory backend python scripts/generate_demo_data.py --output <dir>
 
-* ``market_data.csv``  - long-form daily prices, five fictional tickers + VNINDEX
-* ``portfolio.csv``    - the demonstration weights
-* ``manifest.json``    - seed, date range and SHA-256 of each CSV
-
-The manifest exists so the dataset can be *frozen*: PRD 25 asks for a
-reproducible project dataset, and a checksum is what turns "we regenerated it
-and it looked similar" into a verifiable claim.
+Writes ``market_data.csv``, ``portfolio.csv`` and ``manifest.json`` into it.
 
 These are invented tickers, not real Vietnamese equities. Nothing generated
 here may be presented as observed market data (PRD 0.7, 8.6).
@@ -151,10 +149,10 @@ def sha256_of(path: Path) -> str:
 
 
 def main() -> None:
-    default_output = Path(__file__).resolve().parents[2] / "frontend" / "public" / "demo"
-
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output", type=Path, default=default_output)
+    # Required, with no default: the shipped demo directory now holds real data,
+    # and a stray run must not be able to overwrite it with synthetic prices.
+    parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--seed", type=int, default=SEED)
     args = parser.parse_args()
 

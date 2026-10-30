@@ -4,7 +4,9 @@ Run from the repository root::
 
     uv run --directory backend python scripts/precompute_demo_analysis.py
 
-Writes ``analysis.json`` and ``backtest.json`` into ``frontend/public/demo/``.
+Reads the frozen dataset in ``frontend/public/demo/`` (``market_data.csv`` and
+``portfolio.csv``, produced by ``scripts/fetch_market_data.py``) and writes
+``analysis.json``, ``backtest.json`` and ``stress.json`` alongside it.
 
 Why this exists
 ---------------
@@ -16,7 +18,7 @@ part of a minute. The live API is then only needed for user uploads, where a
 short wait is acceptable and can be shown honestly in the UI.
 
 This is *not* a way of hard-coding results. The numbers here are produced by
-the same engine the API runs, on the same generated dataset, and regenerating
+the same engine the API runs, on the same committed dataset, and regenerating
 is a single command. The one rule that keeps it honest: this script must be
 re-run whenever the engine or the dataset changes, or the dashboard will show
 figures the current code no longer produces. CI runs it and fails if the output
@@ -47,9 +49,8 @@ from app.services.portfolio_metrics import TRADING_DAYS_PER_YEAR
 from app.services.returns import pivot_long_prices
 from app.services.stress_testing import historical_scenario, worst_historical_window
 from app.services.var_models import QUANTILE_METHOD_DESCRIPTION
-from scripts.generate_demo_data import SEED, generate_market_data, generate_portfolio
 
-DATASET_NAME = "Simulated demonstration portfolio"
+DATASET_NAME = "Five HOSE large caps (FPT, VCB, HPG, MWG, VNM), Vietcap adjusted closes"
 
 #: Curve points are display data; six decimals is far finer than a pixel.
 #: Scalar metrics keep full precision.
@@ -72,8 +73,10 @@ def main() -> None:
     output_dir: Path = args.output
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    market = generate_market_data(SEED)
-    portfolio = generate_portfolio()
+    # Read as text so the engine receives exactly what an upload of these files
+    # would give it; the API path parses the same CSVs the same way.
+    market = pd.read_csv(output_dir / "market_data.csv", dtype={"date": str})
+    portfolio = pd.read_csv(output_dir / "portfolio.csv")
     config = AnalysisConfig()
     limits = RiskLimits()
 
@@ -83,7 +86,7 @@ def main() -> None:
         config,
         limits,
         dataset_name=DATASET_NAME,
-        is_simulated=True,
+        is_simulated=False,
     )
 
     analysis_payload = bundle.result.model_dump(by_alias=True, mode="json")
@@ -246,10 +249,10 @@ def _build_stress_scenarios(
         )
 
     return {
-        "isSimulated": True,
+        "isSimulated": False,
         "note": (
-            "Historical scenarios are replays of intervals located in the generated "
-            "dataset. They describe what happened, not what will."
+            "Historical scenarios are replays of intervals located in the real "
+            "2015-2026 price history. They describe what happened, not what will."
         ),
         "weights": [
             {"ticker": t, "weight": float(w), "sector": s}
