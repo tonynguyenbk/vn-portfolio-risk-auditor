@@ -65,7 +65,7 @@ describe("Dataset picker", () => {
 });
 
 describe("A successful upload", () => {
-  it("replaces the displayed analysis and drops the simulated-data label", async () => {
+  it("replaces the displayed analysis and swaps the bundled-data label", async () => {
     const uploaded = structuredClone(demoAnalysis);
     uploaded.metadata.isSimulated = false;
     uploaded.metadata.datasetName = "uploaded dataset";
@@ -80,18 +80,18 @@ describe("A successful upload", () => {
       </>,
     );
 
-    expect(screen.getByText(/Educational prototype • Simulated data/)).toBeInTheDocument();
+    expect(screen.getByText(/^Real historical data \(adjusted closes, source: Vietcap\), 2015-01 → 2026-10\./)).toBeInTheDocument();
 
     await attachBothFiles(user);
     await user.click(screen.getByRole("button", { name: /analyse uploaded files/i }));
 
-    // The label has to track the data: leaving "Simulated data" over a user's
-    // real portfolio would be as much a misstatement as omitting it.
+    // The label has to track the data: leaving the Vietcap provenance over a
+    // user's own files would be as much a misstatement as omitting it.
     await waitFor(() => {
       expect(screen.getByText(/Analysing uploaded data/)).toBeInTheDocument();
     });
     expect(
-      screen.queryByText(/Educational prototype • Simulated data/),
+      screen.queryByText(/^Real historical data \(adjusted closes, source: Vietcap\), 2015-01 → 2026-10\./),
     ).not.toBeInTheDocument();
   });
 
@@ -116,7 +116,7 @@ describe("A successful upload", () => {
     );
 
     await user.click(screen.getByRole("button", { name: /back to bundled demo/i }));
-    expect(screen.getByText(/Educational prototype • Simulated data/)).toBeInTheDocument();
+    expect(screen.getByText(/^Real historical data \(adjusted closes, source: Vietcap\), 2015-01 → 2026-10\./)).toBeInTheDocument();
   });
 });
 
@@ -190,9 +190,9 @@ describe("Run analysis on the bundled dataset", () => {
     });
   });
 
-  it("keeps the simulated-data label after a live run on the bundled data", async () => {
-    // The engine marks any upload as real data because it cannot know the
-    // provenance of a CSV. The caller does know, so the label must survive.
+  it("keeps the bundled-data label after a live run on the bundled data", async () => {
+    // The engine cannot know the provenance of a CSV and treats every upload
+    // alike. The caller does know, so the bundled label must survive.
     const recomputed = structuredClone(demoAnalysis);
     recomputed.metadata.isSimulated = false;
     mockDemoRun(recomputed);
@@ -209,7 +209,7 @@ describe("Run analysis on the bundled dataset", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText(/Educational prototype • Simulated data/),
+        screen.getByText(/^Real historical data \(adjusted closes, source: Vietcap\), 2015-01 → 2026-10\./),
       ).toBeInTheDocument();
     });
     expect(screen.queryByText(/Analysing uploaded data/)).not.toBeInTheDocument();
@@ -236,7 +236,7 @@ describe("Run analysis on the bundled dataset", () => {
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent(/Could not reach the analysis service/);
     // The precomputed figures are still on screen.
-    expect(screen.getByText(/Educational prototype • Simulated data/)).toBeInTheDocument();
+    expect(screen.getByText(/^Real historical data \(adjusted closes, source: Vietcap\), 2015-01 → 2026-10\./)).toBeInTheDocument();
   });
 });
 
@@ -261,7 +261,7 @@ describe("When the service cannot be reached", () => {
     expect(alert).toHaveTextContent(/bundled demonstration is unaffected/);
 
     // And the claim must be true: the demo is still on screen.
-    expect(screen.getByText(/Educational prototype • Simulated data/)).toBeInTheDocument();
+    expect(screen.getByText(/^Real historical data \(adjusted closes, source: Vietcap\), 2015-01 → 2026-10\./)).toBeInTheDocument();
   });
 
   it("lets the user retry after a failure", async () => {

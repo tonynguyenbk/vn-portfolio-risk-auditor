@@ -10,7 +10,7 @@ frameworks were used but where the numbers are computed and when.
 ```mermaid
 flowchart TB
     subgraph build["Build time"]
-        gen["generate_demo_data.py<br/>seed 42"]
+        gen["fetch_market_data.py<br/>real data, frozen + checksummed"]
         pre["precompute_demo_analysis.py"]
         gen -->|"market_data.csv<br/>portfolio.csv"| pre
         pre -->|"analysis.json<br/>backtest.json<br/>stress.json"| static
@@ -160,9 +160,11 @@ backend/
       data_validation.py     PRD 8.5 checks
       analysis.py            orchestration
   scripts/
-    generate_demo_data.py         seeded dataset + checksum manifest
+    fetch_market_data.py          one-off fetch of the real dataset + checksum manifest
+    verify_demo_data.py           checks the committed CSVs against the manifest
+    generate_demo_data.py         seeded synthetic data, used as a test fixture
     precompute_demo_analysis.py   runs the engine, writes the static JSON
-  tests/                     329 tests
+  tests/                     360 tests
 
 frontend/
   app/                       four routes, all statically prerendered

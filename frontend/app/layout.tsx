@@ -27,7 +27,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "VN Risk Auditor — Portfolio risk intelligence",
   description:
-    "Educational prototype for measuring, explaining and validating downside risk in a small Vietnamese equity portfolio. Uses simulated data.",
+    "Educational prototype for measuring, explaining and validating downside risk in a small Vietnamese equity portfolio. Real historical data (adjusted closes, source: Vietcap), 2015-01 → 2026-10. Educational prototype — not investment advice.",
 };
 
 export default function RootLayout({

@@ -18,13 +18,14 @@ Total: ~2:45. Timings are guides, not targets.
 
 **On screen:** Overview page, already loaded.
 
-Point at the VaR 95% card — 2.35%.
+Point at the VaR 95% card — 1.92%.
 
-> "This says the portfolio should lose more than 2.35% on about one day in
+> "This says the portfolio should lose more than 1.92% on about one day in
 > twenty. That's a testable claim, and almost nothing checks it."
 
-Say early and once that the data is simulated. Do not belabour it; the badge is
-on screen throughout.
+Say early and once what the data is: real adjusted closes for five large
+Vietnamese stocks, 2015 to 2026. Do not belabour it; the badge is on screen
+throughout.
 
 ---
 
@@ -37,7 +38,7 @@ everything.
 
 - Four metric cards — volatility, VaR, Expected Shortfall, maximum drawdown.
 - One sentence on why ES is there: *"VaR marks the edge of the tail. Expected
-  Shortfall tells you what's inside it — 3.63% against a 2.35% threshold."*
+  Shortfall tells you what's inside it — 3.18% against a 1.92% threshold."*
 - Risk contribution panel: *"Where the risk comes from is a different question
   from where the money is."*
 
@@ -53,22 +54,22 @@ that is enough.
 This is the heart of the video. Slow down.
 
 > "Three models. Each one estimated using only data from before the day it was
-> forecasting — never its own outcome. Then run forward across 1,837 trading
+> forecasting — never its own outcome. Then run forward across 2,700 trading
 > days and counted."
 
 Point at the table.
 
-> "A 95% model should be breached about 92 times. Historical Simulation was
-> breached 116 times — the Kupiec test rejects it. EWMA was breached 105 times,
-> and is not rejected."
+> "A 95% model should be breached about 135 times. Historical Simulation was
+> breached 147 times, and is not rejected. EWMA was breached 158 times — just
+> enough for the Kupiec test to reject it, with a p-value of 0.048."
 
 Then the finding worth the whole video:
 
-> "Look at Parametric Normal. It passes at 95%. At 99% it fails with a p-value
-> below 0.0001 — 39 breaches where 18 were expected. That's what a thin-tailed
-> assumption looks like: fine through the middle of the distribution, badly
-> wrong in the tail. The same model, validated at one confidence level and
-> unusable at another."
+> "Look at Parametric Normal. At 95% it is almost perfect — 134 breaches against
+> 135 expected. At 99% it fails with a p-value below 0.0001 — 64 breaches where
+> 27 were expected. That's what a thin-tailed assumption looks like: fine through
+> the middle of the distribution, badly wrong in the tail. And at 99% none of the
+> three models survives."
 
 Then the sentence that shows you understand the statistics:
 
@@ -95,9 +96,9 @@ Click through the historical episodes.
 > worst stretches and replayed them against the current weights, so they carry
 > whatever co-movement the assets actually had."
 
-Point at the worst week: −22.99%.
+Point at the worst week: −17.36%, the April 2025 tariff shock.
 
-> "The worst week costs almost 23%. The one-day 95% VaR was 2.35%. That gap is
+> "The worst week costs over 17%. The one-day 95% VaR is 1.92%. That gap is
 > the argument for stress testing existing at all."
 
 Optionally drag one custom slider to show it responds live. Two seconds, no more.
@@ -108,8 +109,8 @@ Optionally drag one custom slider to show it responds live. Two seconds, no more
 
 **On screen:** Report page, then a quick cut to the terminal.
 
-> "Everything is reproducible. The dataset is generated from seed 42 and
-> checksummed — regenerate it and the SHA-256 is identical. The analysis is
+> "Everything is reproducible. The price data was fetched once, frozen and
+> checksummed, and CI checks every file against its SHA-256. The analysis is
 > computed by the same Python engine the API runs."
 
 Terminal, one command, let it finish:
@@ -118,7 +119,7 @@ Terminal, one command, let it finish:
 uv run --directory backend pytest -q
 ```
 
-> "329 tests. The ones that matter most check that no forecast ever saw its own
+> "360 tests. The ones that matter most check that no forecast ever saw its own
 > outcome — a future observation is replaced with a minus-fifty-percent day, and
 > every forecast has to come back bit-for-bit identical."
 
@@ -132,7 +133,8 @@ Back to the Report page. Click a CSV export so a file lands.
 > downside risk, explains where it comes from, and tests whether the model
 > producing those numbers can be trusted on the data it was tested against.
 >
-> The data here is simulated, so it demonstrates the method, not the market."
+> The data is real, but it is five large caps, so it says something about this
+> portfolio, not about the whole market. And none of it is investment advice."
 
 End on the Overview page.
 
@@ -158,10 +160,11 @@ worse result than four clean segments.
 
 ### Things not to say
 
-- "Best model" — say *"the only model not rejected at either confidence level"*.
+- "Best model" — say *"not rejected at 95%"* and name the confidence level.
 - "Proves" — say *"is consistent with"* or *"is not rejected"*.
 - "Safe", "low risk", "guaranteed" — none of these are claims the tool makes.
-- Anything implying the results describe real Vietnamese equities.
+- Anything implying the results generalise beyond these five stocks, or that
+  they say what any of them will do next.
 
 ### If it runs long
 

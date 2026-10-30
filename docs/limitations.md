@@ -9,26 +9,44 @@ results, not after.
 
 ---
 
-## 1. The data is simulated
+## 1. The data: five survivors, prices only, from an unofficial endpoint
 
-Every figure currently displayed comes from a deterministic generated series,
-not from observed Vietnamese market data. The tickers are invented.
+The bundled dataset is real: daily adjusted closes for FPT, VCB, HPG, MWG and
+VNM and the VN-Index, 2015-01-05 to 2026-10-29, retrieved from Vietcap. Its
+provenance is recorded in [`data/DATA_DICTIONARY.md`](../data/DATA_DICTIONARY.md).
+Real data brings its own limits, and they bound what any result can claim.
 
-This means the results demonstrate the **method**, not the market. Statements
-like "EWMA was the best-calibrated model" describe how these estimators behaved
-on this synthetic series and carry no implication about VN30 constituents, the
-VN-Index, or any real portfolio.
+**Survivorship and selection.** The five stocks were chosen in 2026 as large,
+liquid, well-known HOSE names. Every one of them survived the whole period and
+grew into a market leader; none of the companies that were delisted, collapsed
+or shrank over the same years is represented. A portfolio picked with hindsight
+looks better — higher return, and plausibly lower tail risk — than one an
+investor could have picked in 2015. The results describe *this* portfolio, not
+the Vietnamese market and not VN30 constituents in general.
 
-The generator deliberately embeds two volatility regimes so the model audit has
-something to distinguish. That makes the demonstration informative and also
-makes it *easier* than reality: the regime shifts are cleaner than real ones, and
-the return distribution is a mixture of Normals rather than whatever equity
-returns actually are.
+**Five stocks is a small, concentrated sample.** Statements such as "Parametric
+Normal was well calibrated at 95%" describe how these estimators behaved on one
+portfolio over one stretch of history. A different selection, weighting or
+period could reverse them.
 
-When real data is introduced, its source, retrieval date, licence, adjustment
-method and cleaning decisions must be recorded in
-[`data/DATA_DICTIONARY.md`](../data/DATA_DICTIONARY.md) before any result is
-reported.
+**Price data only.** Closes and daily volume, nothing else. There are no
+bid-ask spreads, no order-book depth, no intraday prices, no transaction-level
+data and no free-float or foreign-ownership-limit information. Liquidity risk —
+including the limit-down days on which HOSE stocks often cannot be sold at all —
+is therefore invisible to every figure here.
+
+**Daily price limits truncate observed returns.** HOSE caps a stock's daily move
+at ±7%. A crash that would have been −15% in one day appears as several
+consecutive −7% days instead. That spreads a single loss over multiple
+observations and makes one-day VaR and ES look less extreme than the economic
+loss actually was.
+
+**The source is an undocumented endpoint.** It has no published terms, no
+versioning and no service guarantee. It can change shape, re-base its
+adjustments, revise history or disappear without notice. The committed CSVs are
+frozen and checksummed precisely so that results remain reproducible when that
+happens — but a re-fetch today may not reproduce them, and the adjustment
+method is the provider's, not one this project can inspect.
 
 ## 2. Fixed weights
 
@@ -37,7 +55,7 @@ modelled, and neither are transaction costs, taxes, bid-ask spreads, or the
 market impact of trading.
 
 A real portfolio drifts as prices move. A portfolio that started 25/25/20/15/15
-does not stay there for eight years. Fixed weights make the analysis tractable
+does not stay there for nearly twelve years. Fixed weights make the analysis tractable
 and reproducible, and they make it a description of a *hypothetical* portfolio
 rather than any portfolio someone actually held.
 
@@ -60,11 +78,11 @@ portfolio becomes in a crisis.
 
 ## 5. The 99% results rest on very few observations
 
-At 99% confidence over 1,837 test days, roughly 18 exceptions are expected. Any
-statistic computed from around eighteen events carries wide uncertainty, and the
+At 99% confidence over 2,700 test days, 27 exceptions are expected. Any
+statistic computed from a few dozen events carries wide uncertainty, and the
 Kupiec test's asymptotic χ² approximation is at its weakest there.
 
-Treat the 99% column as indicative. The 95% results, with roughly 92 expected
+Treat the 99% column as indicative. The 95% results, with 135 expected
 exceptions, are on firmer ground.
 
 ## 6. What the Kupiec test does not test
@@ -120,15 +138,24 @@ Every VaR and ES figure is a one-day forecast. Multi-day risk is not modelled,
 and the common `√h` scaling rule is not applied — it assumes independent returns,
 which volatility clustering violates.
 
-## 10. No adjustment for corporate actions
+## 10. Corporate-action adjustment is the provider's
 
-The demonstration data uses closing prices. Real price series need adjustment for
-dividends, splits and rights issues; an unadjusted series shows an artificial
-drop on the ex-dividend date that a model will read as a loss.
+Real price series need adjustment for dividends, splits, bonus shares and
+rights issues; an unadjusted series shows an artificial drop on the ex-date
+that a model will read as a loss. Vietnamese stocks pay frequent stock
+dividends, so this matters more here than in many markets.
 
-The schema supports an `adjusted_close` column and the engine will prefer it and
-report that it did. Until real data arrives with one, results carry this
-limitation.
+The demonstration closes arrive already adjusted by Vietcap, and are used as
+supplied. The provider does not document its method — in particular whether
+rights issues are adjusted and how cash dividends are back-propagated — so the
+project cannot verify it. The retrieval script does check for symptoms: any
+daily move beyond the ±7% HOSE limit would indicate a missed adjustment, and
+none was found. That is evidence against gross errors, not proof of a correct
+adjustment.
+
+Adjusted closes are stored in the `close` column, so the engine reports `close`
+as its price basis. User uploads can instead supply an `adjusted_close` column,
+which the engine prefers and reports.
 
 ## 11. Not validated for any real use
 

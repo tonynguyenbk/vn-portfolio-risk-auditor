@@ -1,10 +1,10 @@
 # Normalise every text file to LF in the working tree.
 #
-# This is not cosmetic. `backend/scripts/generate_demo_data.py` writes the demo
+# This is not cosmetic. `backend/scripts/fetch_market_data.py` writes the demo
 # CSVs with explicit LF endings and records their SHA-256 in manifest.json. If
-# Git checked those files out with CRLF on Windows, regenerating the dataset
-# would produce a different digest and the reproducibility check documented in
-# the README would fail for a reason that has nothing to do with the data.
+# Git checked those files out with CRLF on Windows, the checksum verification
+# (`backend/scripts/verify_demo_data.py`) would fail for a reason that has
+# nothing to do with the data.
 * text=auto eol=lf
 
 # Binary files Git must not touch.

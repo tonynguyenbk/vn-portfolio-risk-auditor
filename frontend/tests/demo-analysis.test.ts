@@ -14,20 +14,37 @@ import { downsample } from "@/lib/chart-utils";
  */
 
 describe("demo manifest", () => {
-  it("records the seed so the dataset can be reproduced", () => {
-    expect(demoManifest.seed).toBe(42);
-    expect(demoManifest.isSimulated).toBe(true);
+  it("records the real-data provenance the UI label claims", () => {
+    expect(demoManifest.isSimulated).toBe(false);
+    expect(demoManifest.source.provider).toBe("Vietcap");
+    expect(demoManifest.adjustment).toBe("adjusted close as provided by Vietcap");
+    // DEMO_DATA_DESCRIPTION quotes the period as 2015-01 → 2026-10.
+    expect(demoManifest.firstObservation.startsWith("2015-01")).toBe(true);
+    expect(demoManifest.lastObservation.startsWith("2026-10")).toBe(true);
+  });
+
+  it("checksums both CSVs so the frozen dataset can be verified", () => {
+    for (const name of ["market_data.csv", "portfolio.csv"]) {
+      expect(demoManifest.files[name]).toMatch(/^[0-9a-f]{64}$/);
+    }
   });
 
   it("covers the five demonstration assets plus the benchmark", () => {
-    expect(demoManifest.tickers).toHaveLength(6);
-    expect(demoManifest.tickers).toContain("VNINDEX");
+    expect(demoManifest.tickers).toEqual(["FPT", "VCB", "HPG", "MWG", "VNM", "VNINDEX"]);
+    expect(demoManifest.benchmark).toBe("VNINDEX");
   });
 });
 
 describe("analysis payload", () => {
-  it("is labelled as simulated so the UI can never present it as real data", () => {
-    expect(demoAnalysis.metadata.isSimulated).toBe(true);
+  it("is not flagged as simulated, matching the manifest", () => {
+    expect(demoAnalysis.metadata.isSimulated).toBe(false);
+    expect(demoAnalysis.metadata.isSimulated).toBe(demoManifest.isSimulated);
+  });
+
+  it("covers exactly the period and day count the manifest records", () => {
+    expect(demoAnalysis.metadata.startDate).toBe(demoManifest.firstObservation);
+    expect(demoAnalysis.metadata.endDate).toBe(demoManifest.lastObservation);
+    expect(demoAnalysis.metadata.observations).toBe(demoManifest.tradingDays);
   });
 
   it("carries portfolio weights that sum to one within tolerance", () => {

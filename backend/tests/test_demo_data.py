@@ -1,7 +1,11 @@
-"""Demonstration dataset tests (PRD 8.6, 20.1).
+"""Synthetic fixture tests (PRD 8.6, 20.1).
 
-The demo data underpins every screenshot and every figure a reviewer will see,
-so its reproducibility is a property worth testing rather than assuming.
+``generate_demo_data`` no longer produces the shipped demonstration dataset —
+that is real market data, covered by ``test_shipped_dataset.py``. The generator
+remains the fixture several suites run the engine against, because its
+properties (seeded, gap-free, two volatility regimes) are known by construction.
+These tests pin those properties, so a suite relying on them fails here first
+rather than mysteriously elsewhere.
 """
 
 from __future__ import annotations

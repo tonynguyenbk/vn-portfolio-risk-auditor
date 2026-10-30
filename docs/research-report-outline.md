@@ -17,14 +17,14 @@ Model-Validation, and Stress-Testing Platform for Vietnam's Equity Market*
 One sentence each: the problem, the data, the models, the validation method, the
 prototype, the main finding, the principal limitation.
 
-The finding worth leading with is the one the results actually support: *the
-three estimators disagree, and the disagreement is systematic rather than
-random — the adaptive estimator survives validation at both confidence levels
-while the static ones do not, and the Normal model fails specifically in the
-tail.*
+The finding worth leading with is the one the results actually support: *at
+95% the estimators are hard to tell apart, but at 99% every one of them is
+rejected — the tail of real Vietnamese large-cap returns is heavier than any of
+the three models assumes, and the Normal model fails worst there.*
 
-Do not claim anything about Vietnamese markets. The data is simulated and the
-abstract must say so.
+Claim only what five large caps over 2015–2026 can support. The data is real
+(adjusted closes from Vietcap) but it is one small, survivor-selected portfolio,
+and the abstract must say so.
 
 ---
 
@@ -40,10 +40,12 @@ abstract must say so.
   usable history — conditions under which model choice matters more.
 - Research aim and the five research questions (PRD 6.2).
 
-State early that the data is simulated and explain why that is acceptable for
-the question being asked: the study evaluates *estimator behaviour under known
-conditions*, and a generated series lets the regime structure be known rather
-than inferred.
+State early what the data is and is not: real daily adjusted closes for five
+HOSE large caps and the VN-Index, 2015–2026, from an undocumented public
+endpoint. The regimes in it — the 2018 correction, the March 2020 crash, the
+2022 bond-market and property stress, the April 2025 tariff shock — are
+historical, not designed in, so the estimator comparison is a test against
+market behaviour rather than against a generator's assumptions.
 
 ---
 
@@ -97,13 +99,15 @@ Give these their own paragraphs — they are the parts a marker can check:
 
 ### Data
 
-Generated, seed 42, five fictional tickers plus a benchmark, 2,088 trading days
-spanning 2018-01-01 to 2025-12-31. Market-factor model with asset-specific betas
-and idiosyncratic noise, plus two deliberate high-volatility windows.
+Real daily closes, adjusted for dividends and splits by the provider (Vietcap),
+for FPT, VCB, HPG, MWG and VNM plus the VN-Index as benchmark: 2,951 trading days
+from 2015-01-05 to 2026-10-29, with identical trading calendars so alignment
+drops nothing. Retrieved once, frozen and checksummed; provenance is recorded in
+[`data/DATA_DICTIONARY.md`](../data/DATA_DICTIONARY.md).
 
-Be explicit that the regime structure is *designed in*, and say why: it makes the
-comparison between adaptive and static estimators observable rather than a matter
-of luck.
+Be explicit about selection: these are five of the largest, most liquid survivors
+on the exchange, chosen in 2026. Results describe this portfolio, not the
+Vietnamese market.
 
 ---
 
@@ -126,59 +130,73 @@ Include the architecture diagram.
 
 | Quantity | Value |
 |---|---|
-| Analysis period | 2018-01-01 → 2025-12-31 |
-| Aligned observations | 2,088 |
+| Analysis period | 2015-01-05 → 2026-10-29 |
+| Aligned observations | 2,951 |
 | Assets | 5 + benchmark |
-| Annualised volatility | 24.63% |
-| Maximum drawdown | −54.68% |
+| Annualised volatility | 20.77% |
+| Maximum drawdown | −35.20% (2022-04-06 → 2022-11-15) |
 
 ### 5.2 Risk metrics at the full-sample level
 
 | Metric | Value |
 |---|---|
-| One-day VaR 95% (Historical) | 2.35% |
-| Expected Shortfall 95% | 3.63% |
-| Largest risk contributor | ASSET_B (29.7% of portfolio volatility, on a 25% weight) |
+| One-day VaR 95% (Historical) | 1.92% |
+| One-day VaR 95% (Parametric Normal) | 2.09% |
+| One-day VaR 95% (EWMA Normal) | 1.15% |
+| Expected Shortfall 95% | 3.18% |
+| Largest risk contributor | VCB (24.9% of portfolio volatility, on a 25% weight) |
 | HHI | 0.2100 |
 
-Note that ES exceeds VaR by roughly 55% — the tail is materially worse than the
+Note that ES exceeds VaR by roughly 66% — the tail is materially worse than the
 threshold alone suggests, which is the empirical answer to RQ5.
+
+The EWMA figure is low because it reflects the calm of the final weeks of the
+sample, not because the portfolio is safer than the other two models imply.
 
 ### 5.3 Model comparison and backtest — the core result
 
-Walk-forward, 250-day window, 1,837 test days:
+Walk-forward, 250-day window, 2,700 test days:
 
 | Model | Conf. | Exceptions | Expected | Rate | Kupiec LR | p | Result |
 |---|---:|---:|---:|---:|---:|---:|---|
-| Historical Simulation | 95% | 116 | 91.9 | 6.31% | 6.19 | 0.0128 | fail |
-| Historical Simulation | 99% | 34 | 18.4 | 1.85% | 10.74 | 0.0010 | fail |
-| Parametric Normal | 95% | 109 | 91.9 | 5.93% | 3.19 | 0.0741 | pass |
-| Parametric Normal | 99% | 39 | 18.4 | 2.12% | 17.70 | <0.0001 | fail |
-| EWMA Normal | 95% | 105 | 91.9 | 5.72% | 1.90 | 0.1683 | pass |
-| EWMA Normal | 99% | 23 | 18.4 | 1.25% | 1.09 | 0.2961 | pass |
+| Historical Simulation | 95% | 147 | 135.0 | 5.44% | 1.09 | 0.2959 | pass |
+| Historical Simulation | 99% | 43 | 27.0 | 1.59% | 8.12 | 0.0044 | fail |
+| Parametric Normal | 95% | 134 | 135.0 | 4.96% | 0.01 | 0.9296 | pass |
+| Parametric Normal | 99% | 64 | 27.0 | 2.37% | 36.98 | <0.0001 | fail |
+| EWMA Normal | 95% | 158 | 135.0 | 5.85% | 3.92 | 0.0477 | fail |
+| EWMA Normal | 99% | 59 | 27.0 | 2.19% | 28.63 | <0.0001 | fail |
 
-Two findings to develop:
+Three findings to develop:
 
-1. **EWMA is the only estimator not rejected at either level.** Every model
-   under-forecasts risk on this data, but the adaptive one under-forecasts least.
-2. **Parametric Normal passes at 95% and fails decisively at 99%.** This is the
-   signature of a thin-tailed assumption: adequate through the body of the
-   distribution, badly wrong in the extreme tail. A model can be "validated" at
-   one confidence level and be unusable at another.
+1. **No estimator survives at 99%.** Every model under-forecasts the extreme
+   tail of this portfolio, by a factor of 1.6 (Historical) to 2.4 (Parametric
+   Normal) in exception count. The 99% question has no satisfactory answer among
+   these three models, which is itself the result.
+2. **Parametric Normal is near-perfect at 95% and worst at 99%.** 134 exceptions
+   against 135 expected, then 64 against 27. This is the signature of a
+   thin-tailed assumption: adequate through the body of the distribution, badly
+   wrong in the extreme tail. A model can be "validated" at one confidence level
+   and be unusable at another.
+3. **EWMA is narrowly rejected at 95% (p = 0.048).** With λ = 0.94 the estimate
+   tracks the last few weeks closely, so it is lowest in calm spells and is then
+   caught out when volatility returns abruptly — as it did in March 2020 and
+   April 2025. Adaptivity cuts both ways, and a p-value this close to 0.05
+   deserves to be reported as borderline rather than as a clean failure.
 
 ### 5.4 Stress testing
 
 | Scenario | Period | Impact |
 |---|---|---:|
-| Worst trading week | 2019-10-07 → 2019-10-14 | −22.99% |
-| Worst month | 2019-09-17 → 2019-10-15 | −15.23% |
-| Worst quarter | 2022-11-15 → 2023-02-07 | −24.28% |
+| Worst trading week | 2025-04-01 → 2025-04-09 | −17.36% |
+| Worst month | 2020-03-02 → 2020-03-30 | −27.09% |
+| Worst quarter | 2019-12-27 → 2020-03-30 | −32.14% |
 
-Worth a sentence: the worst *week* is more severe than the worst *month*,
-because the month window contains a partial recovery. Horizon choice changes the
-answer, which is itself a finding about how stress tests are specified.
+Worth a sentence: the worst *week* and the worst *month* come from different
+episodes — the April 2025 US tariff announcement and the March 2020 COVID crash.
+Horizon choice changes which crisis the stress test describes, which is itself a
+finding about how stress tests are specified.
 
-Compare the −22.99% week against the 2.35% one-day 95% VaR and discuss what that
+Compare the −17.36% week against the 1.92% one-day 95% VaR and discuss what that
 gap means about extrapolating daily risk measures.
 
 ### 5.5 Risk contribution
@@ -196,9 +214,10 @@ between the two — risk share is not weight share.
 - **Ordinary versus high-volatility periods.** RQ3. The regime comparison is not
   implemented, so treat this as a hypothesis the results are *consistent* with,
   and say clearly that it was not directly tested. Do not overclaim.
-- **What validation adds.** Had the study stopped at calculation, all three
-  models would have looked equally usable — they produce VaR figures within
-  0.2 percentage points of each other. Only the backtest separates them.
+- **What validation adds.** Had the study stopped at calculation, the
+  full-sample figures would have suggested Historical and Parametric Normal are
+  interchangeable (1.92% against 2.09% at 95%). Only the backtest shows that they
+  diverge sharply at 99%.
 - **Practical use.** How a risk analyst would read this output, and what decision
   it would inform.
 - **What the prototype cannot do.** Route to [limitations.md](limitations.md).
@@ -210,8 +229,8 @@ between the two — risk share is not weight share.
 Condense [limitations.md](limitations.md). Do not soften it. The credibility of
 sections 5 and 6 depends on this section being unflinching.
 
-Prioritise: simulated data; fixed weights; correlations treated as stable; ~18
-tail observations at 99%; the Kupiec test's blindness to clustering; linear
+Prioritise: five survivor large caps, prices only; fixed weights; correlations
+treated as stable; ~27 expected tail observations at 99%; the Kupiec test's blindness to clustering; linear
 single-period stress testing; no production validation.
 
 ---
@@ -219,11 +238,13 @@ single-period stress testing; no production validation.
 ## 8. Conclusion (~0.5 page)
 
 - Answer each research question explicitly, in order, in one or two sentences.
-- **RQ2 has a clear answer** (EWMA); **RQ3 does not** — say so rather than
+- **RQ2 has a partial answer** — at 95% Historical and Parametric Normal are
+  not rejected, at 99% nothing is; **RQ3 does not** — say so rather than
   implying one.
 - State what was learned, including what failed during development.
 - Propose extensions: Monte Carlo with Student-t, conditional-coverage testing,
-  regime comparison, real data, liquidity-adjusted stress testing.
+  regime comparison, a broader survivorship-free universe, liquidity-adjusted
+  stress testing.
 
 ---
 
@@ -268,8 +289,8 @@ The section supports the report's main argument in two ways worth stating:
 
 ## Writing notes
 
-**Precision over enthusiasm.** "The EWMA model was not rejected at either
-confidence level" is stronger and more accurate than "EWMA was the best model".
+**Precision over enthusiasm.** "Parametric Normal was not rejected at 95%" is
+stronger and more accurate than "Parametric Normal was the best model".
 
 **Never write that a Kupiec pass proves a model correct.** It means the exception
 count is not statistically inconsistent with the target rate. This distinction is

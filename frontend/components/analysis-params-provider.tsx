@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { demoManifest } from "@/lib/demo-data";
 import type { AnalysisParams, VarModel } from "@/types/analysis";
 
 /**
@@ -27,8 +28,10 @@ export const DEFAULT_PARAMS: AnalysisParams = {
   ewmaLambda: 0.94,
   benchmark: "VNINDEX",
   notionalValue: null,
-  startDate: "2018-01-01",
-  endDate: "2025-12-31",
+  // The bundled dataset's requested period, read from its manifest so the
+  // date inputs cannot drift from the data they describe.
+  startDate: demoManifest.startDate,
+  endDate: demoManifest.endDate,
 };
 
 interface ValidationResult {

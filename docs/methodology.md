@@ -44,9 +44,20 @@ Log returns are used because they are additive through time, which makes the
 wealth curve and the variance recursions well behaved.
 
 The first observation carries no return and is dropped, so a price history of
-`N` days yields `N - 1` returns. This one-off difference propagates: a 2,088-day
-price history gives 2,087 returns, and a 250-day rolling window then leaves
-1,837 backtest days.
+`N` days yields `N - 1` returns. This one-off difference propagates: the
+2,951-day price history of the demonstration dataset gives 2,950 returns, and a
+250-day rolling window then leaves 2,700 backtest days.
+
+### 2.1a Price basis of the demonstration dataset
+
+The bundled dataset holds real daily closes for FPT, VCB, HPG, MWG and VNM, and
+the VN-Index as benchmark, from 2015-01-05 to 2026-10-29. The closes are
+**adjusted for dividends and splits by the provider (Vietcap)** and are used as
+supplied; the project applies no adjustment of its own. They are stored in the
+`close` column, so the engine reports `close` as its price basis — the column
+name is the schema's, and the values in it are adjusted. Provenance, cleaning
+decisions and the sanity checks run at retrieval are recorded in
+[`data/DATA_DICTIONARY.md`](../data/DATA_DICTIONARY.md).
 
 ### 2.2 Alignment
 
@@ -402,9 +413,12 @@ tend to produce losses larger than a weighted sum implies.
 
 ## 9. Reproducibility
 
-- The demonstration dataset is generated from **seed 42** and its SHA-256 is
-  recorded in `frontend/public/demo/manifest.json`. Regeneration is verified
-  byte-identical rather than assumed.
+- The demonstration dataset is real market data, fetched once by
+  `backend/scripts/fetch_market_data.py` with a frozen request window and
+  committed. Real data cannot be regenerated from a seed — the provider may
+  revise history — so the committed CSVs are the dataset of record, and their
+  SHA-256 checksums in `frontend/public/demo/manifest.json` are verified in CI
+  by `backend/scripts/verify_demo_data.py`.
 - The analysis the dashboard displays is precomputed by the same engine the API
   runs, and must be regenerated whenever either the engine or the dataset
   changes.
@@ -419,7 +433,7 @@ tend to produce losses larger than a weighted sum implies.
 
 Every figure is backward-looking. A model that reproduced past losses well can
 still fail when market behaviour changes, and the tests here measure calibration
-on one synthetic series — they say nothing about Vietnamese markets, and nothing
-about the future.
+on one five-stock portfolio over 2015–2026 — they say little about the
+Vietnamese market as a whole, and nothing about the future.
 
 See [limitations.md](limitations.md) for the full account.

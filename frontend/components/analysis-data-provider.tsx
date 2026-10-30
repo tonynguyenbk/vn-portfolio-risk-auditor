@@ -129,11 +129,9 @@ export function AnalysisDataProvider({ children }: { children: React.ReactNode }
 
         const result = await analyse(market, portfolio, params, limits);
         // The engine receives CSVs and cannot know their provenance, so it
-        // marks any upload as real data. Here the caller *does* know: these are
-        // the bundled synthetic files. Correcting the flag keeps the
-        // simulated-data label accurate, which matters more than deferring to
-        // the payload.
-        result.metadata.isSimulated = true;
+        // cannot name them. Here the caller *does* know: these are the bundled
+        // real-data files, so they keep the bundled dataset's name and the
+        // data-source label (driven by `source` below) stays accurate.
         result.metadata.datasetName = demoAnalysis.metadata.datasetName;
         setAnalysis(result);
 

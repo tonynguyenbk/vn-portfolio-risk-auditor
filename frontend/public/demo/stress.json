@@ -1,31 +1,31 @@
 {
-  "isSimulated": true,
-  "note": "Historical scenarios are replays of intervals located in the generated dataset. They describe what happened, not what will.",
+  "isSimulated": false,
+  "note": "Historical scenarios are replays of intervals located in the real 2015-2026 price history. They describe what happened, not what will.",
   "weights": [
     {
-      "ticker": "ASSET_A",
+      "ticker": "FPT",
       "weight": 0.25,
       "sector": "Technology"
     },
     {
-      "ticker": "ASSET_B",
+      "ticker": "VCB",
       "weight": 0.25,
       "sector": "Banking"
     },
     {
-      "ticker": "ASSET_C",
+      "ticker": "HPG",
       "weight": 0.2,
-      "sector": "Consumer"
-    },
-    {
-      "ticker": "ASSET_D",
-      "weight": 0.15,
       "sector": "Materials"
     },
     {
-      "ticker": "ASSET_E",
+      "ticker": "MWG",
       "weight": 0.15,
       "sector": "Retail"
+    },
+    {
+      "ticker": "VNM",
+      "weight": 0.15,
+      "sector": "Consumer"
     }
   ],
   "scenarios": [
@@ -36,43 +36,43 @@
       "windowDays": 5,
       "scenarioName": "Worst trading week",
       "scenarioType": "historical",
-      "portfolioImpact": -0.22985543,
-      "loss": 0.22985543,
-      "largestContributor": "ASSET_A",
+      "portfolioImpact": -0.17359224,
+      "loss": 0.17359224,
+      "largestContributor": "VCB",
       "limitStatus": "breach",
       "stressLimit": 0.08,
-      "periodStart": "2019-10-07",
-      "periodEnd": "2019-10-14",
+      "periodStart": "2025-04-01",
+      "periodEnd": "2025-04-09",
       "impacts": [
         {
-          "ticker": "ASSET_A",
+          "ticker": "FPT",
           "weight": 0.25,
-          "shock": -0.28239901,
-          "contribution": -0.07059975
+          "shock": -0.12614098,
+          "contribution": -0.03153525
         },
         {
-          "ticker": "ASSET_B",
+          "ticker": "VCB",
           "weight": 0.25,
-          "shock": -0.2526825,
-          "contribution": -0.06317062
+          "shock": -0.18604641,
+          "contribution": -0.0465116
         },
         {
-          "ticker": "ASSET_C",
+          "ticker": "HPG",
           "weight": 0.2,
-          "shock": -0.14599081,
-          "contribution": -0.02919816
+          "shock": -0.21111125,
+          "contribution": -0.04222225
         },
         {
-          "ticker": "ASSET_D",
+          "ticker": "MWG",
           "weight": 0.15,
-          "shock": -0.27268293,
-          "contribution": -0.04090244
+          "shock": -0.21075083,
+          "contribution": -0.03161262
         },
         {
-          "ticker": "ASSET_E",
+          "ticker": "VNM",
           "weight": 0.15,
-          "shock": -0.17322965,
-          "contribution": -0.02598445
+          "shock": -0.14473679,
+          "contribution": -0.02171052
         }
       ]
     },
@@ -83,43 +83,43 @@
       "windowDays": 20,
       "scenarioName": "Worst month",
       "scenarioType": "historical",
-      "portfolioImpact": -0.15230146,
-      "loss": 0.15230146,
-      "largestContributor": "ASSET_B",
+      "portfolioImpact": -0.27089264,
+      "loss": 0.27089264,
+      "largestContributor": "FPT",
       "limitStatus": "breach",
       "stressLimit": 0.08,
-      "periodStart": "2019-09-17",
-      "periodEnd": "2019-10-15",
+      "periodStart": "2020-03-02",
+      "periodEnd": "2020-03-30",
       "impacts": [
         {
-          "ticker": "ASSET_A",
+          "ticker": "FPT",
           "weight": 0.25,
-          "shock": -0.20202426,
-          "contribution": -0.05050606
+          "shock": -0.27468595,
+          "contribution": -0.06867149
         },
         {
-          "ticker": "ASSET_B",
+          "ticker": "VCB",
           "weight": 0.25,
-          "shock": -0.21004184,
-          "contribution": -0.05251046
+          "shock": -0.2542788,
+          "contribution": -0.0635697
         },
         {
-          "ticker": "ASSET_C",
+          "ticker": "HPG",
           "weight": 0.2,
-          "shock": 0.00136682,
-          "contribution": 0.00027336
+          "shock": -0.26681671,
+          "contribution": -0.05336334
         },
         {
-          "ticker": "ASSET_D",
+          "ticker": "MWG",
           "weight": 0.15,
-          "shock": -0.1230234,
-          "contribution": -0.01845351
+          "shock": -0.44131467,
+          "contribution": -0.0661972
         },
         {
-          "ticker": "ASSET_E",
+          "ticker": "VNM",
           "weight": 0.15,
-          "shock": -0.20736526,
-          "contribution": -0.03110479
+          "shock": -0.12727275,
+          "contribution": -0.01909091
         }
       ]
     },
@@ -130,43 +130,43 @@
       "windowDays": 60,
       "scenarioName": "Worst quarter",
       "scenarioType": "historical",
-      "portfolioImpact": -0.24279097,
-      "loss": 0.24279097,
-      "largestContributor": "ASSET_A",
+      "portfolioImpact": -0.32142465,
+      "loss": 0.32142465,
+      "largestContributor": "VCB",
       "limitStatus": "breach",
       "stressLimit": 0.08,
-      "periodStart": "2022-11-15",
-      "periodEnd": "2023-02-07",
+      "periodStart": "2019-12-27",
+      "periodEnd": "2020-03-30",
       "impacts": [
         {
-          "ticker": "ASSET_A",
+          "ticker": "FPT",
           "weight": 0.25,
-          "shock": -0.43631195,
-          "contribution": -0.10907799
+          "shock": -0.29861129,
+          "contribution": -0.07465282
         },
         {
-          "ticker": "ASSET_B",
+          "ticker": "VCB",
           "weight": 0.25,
-          "shock": -0.22568341,
-          "contribution": -0.05642085
+          "shock": -0.31998281,
+          "contribution": -0.0799957
         },
         {
-          "ticker": "ASSET_C",
+          "ticker": "HPG",
           "weight": 0.2,
-          "shock": 0.00758567,
-          "contribution": 0.00151713
+          "shock": -0.30573265,
+          "contribution": -0.06114653
         },
         {
-          "ticker": "ASSET_D",
+          "ticker": "MWG",
           "weight": 0.15,
-          "shock": -0.29375407,
-          "contribution": -0.04406311
+          "shock": -0.47577096,
+          "contribution": -0.07136564
         },
         {
-          "ticker": "ASSET_E",
+          "ticker": "VNM",
           "weight": 0.15,
-          "shock": -0.23164105,
-          "contribution": -0.03474616
+          "shock": -0.22842636,
+          "contribution": -0.03426395
         }
       ]
     }
