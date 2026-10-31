@@ -53,8 +53,14 @@ from app.services.var_models import QUANTILE_METHOD_DESCRIPTION
 DATASET_NAME = "Five HOSE large caps (FPT, VCB, HPG, MWG, VNM), Vietcap adjusted closes"
 
 #: Curve points are display data; six decimals is far finer than a pixel.
-#: Scalar metrics keep full precision.
 CURVE_PRECISION = 6
+
+#: Every other float is written to ten significant digits. Full precision is
+#: not reproducible across platforms: Windows and Linux builds of NumPy differ
+#: in the last unit of the last place, which made CI's byte-identical check
+#: fail on figures that agreed to 1e-16. Ten digits is still far beyond
+#: anything displayed or asserted.
+SIGNIFICANT_DIGITS = 10
 
 
 def _round_curve(points: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -264,11 +270,22 @@ def _build_stress_scenarios(
     }
 
 
+def _portable(value: Any) -> Any:
+    """Round floats to SIGNIFICANT_DIGITS, recursively, so output is platform-independent."""
+    if isinstance(value, float):
+        return float(f"{value:.{SIGNIFICANT_DIGITS}g}")
+    if isinstance(value, dict):
+        return {key: _portable(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_portable(item) for item in value]
+    return value
+
+
 def _write(path: Path, payload: object) -> None:
     # newline="\n" keeps the file byte-identical across platforms, matching the
     # LF policy in .gitattributes.
     path.write_text(
-        json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
+        json.dumps(_portable(payload), indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
         newline="\n",
     )
