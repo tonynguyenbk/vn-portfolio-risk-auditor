@@ -5,7 +5,8 @@ how much risk it carries, where that risk comes from, how it responds to adverse
 scenarios, and — the part most tools skip — whether the risk model itself can be
 trusted on the data it was tested against.
 
-**Live:** https://vnportfolioriskauditor.vercel.app
+**Live:** https://vnportfolioriskauditor.vercel.app ·
+**User guide (Vietnamese):** [docs/HUONG-DAN-SU-DUNG.md](docs/HUONG-DAN-SU-DUNG.md)
 
 > **Educational prototype • Simulated data.** Every figure currently shown is computed
 > from a deterministic generated series, not from observed market data. This project
